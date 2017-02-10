@@ -231,7 +231,7 @@ Randomized greedy search inference, as specified in the hw1 spec.
 @w: the weights for the structured featured function as a 1xd numpy vector
 @phi: the structured feature function
 @R: the number of random restarts for the greedy search
-"""
+
 def InferRGS(xseq, w, phi, R):
 	d = w.shape[1]
 	#intialize y_hat structured output to random labels
@@ -295,7 +295,93 @@ def InferRGS(xseq, w, phi, R):
 	#print("score: "+str(maxScore))
 
 	return y_max, phi(xseq, y_max, d), maxScore
+"""
+def InferRGS(xseq, w, phi, R):
+	d = w.shape[1]
+	#intialize y_hat structured output to random labels
+	#y_max = _getRandomY(LABELS, len(xseq))
+	#phi_y_max = np.zeros((1,d)) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
+	#maxScore = _score(xseq, y_max, w, phi)
+	yLen = len(xseq)
+	maxScore = -1000000
+	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
+	for dummy in range(R):
+		y_test = _getRandomY(LABELS, yLen)
+		#there is an optimization here, since only changing one label at a time, only certain components of z change in the loop below; hence one can leverage this to avoid repeated calls to phi()
+		#z = phi(xseq, y_r, d)
+		#baseScore = w.dot(z.T)[0,0]
+		
+		convergence = False #convergence satisfied when there is no further improvemet to be made via one character changes, eg, the label sequence does not change
+		while not convergence:
+			#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
+			z = phi(xseq, y_test, d)
+			baseScore = w.dot(z.T)[0,0]
+			localMaxScore = -100000000
+			
+			#until convergence, evaluate all one label changes for y_test, a search space of size len(y_test)*k, where k is the number of labels
+			for i in range(yLen):
+				######## begin by decrementing the score by the current label's components ###################
+				cOriginal = y_test[i]
+				xi = xseq[i][0,:]
+				#get the unary feature component
+				urange = g_unaryFeatureVectorIndices[cOriginal]
+				w_xy_c_original = w[0, urange[0]:urange[1]]
+				#decrement the original unary component/feature
+				tempScore = baseScore - w_xy_c_original.dot(xi)
+				#decrement all the other relevant pairwise, triple, or quad components from score
+				if i > 0:
+					pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+cOriginal]
+					tempScore -= w[0, pairwiseIndex]
+				if USE_TRIPLES and i > 1:
+					tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+cOriginal]
+					tempScore -= w[0, tripleIndex]
+				if USE_QUADS and i > 2:
+					quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+cOriginal]
+					tempScore -= w[0, quadIndex]
+				######## end decrements; now we can add individual components for each label change, below #######
+				
+				###### evaluate all k different modifications to this label, incrementing the base score by each component ###
+				for j in range(len(LABELS)):
+					c = LABELS[j]
+					urange = g_unaryFeatureVectorIndices[c]
+					w_c = w[0, urange[0]:urange[1]]
+					cScore = tempScore + w_c.dot(xi)
+					#add the pairwise component
+					if i > 0:
+						pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+c]
+						cScore += w[0, pairwiseIndex]
+					if USE_TRIPLES and i > 1:
+						tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+c]
+						cScore += w[0, tripleIndex]
+					if USE_QUADS and i > 2:
+						quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+c]
+						cScore += w[0, quadIndex]
 
+					if cScore > localMaxScore:
+						localMaxScore = cScore
+						#save y_hat, z_y_hat
+						y_local_max = list(y_test)
+						y_local_max[i] = str(c)
+				
+				#the convergence check/update
+				if y_local_max == y_test:
+					convergence = True					
+				else:
+					y_test = list(y_local_max)
+						
+			#end while: update the global max, as needed
+			if localMaxScore > maxScore:
+				maxScore = localMaxScore
+				y_max = list(y_local_max)
+			
+	#print("ymax: "+str(y_max))
+	#print("score: "+str(maxScore))
+
+	return y_max, phi(xseq, y_max, d), maxScore
+
+
+
+	
 """
 The old core loop from InferRGS
 
@@ -338,34 +424,47 @@ def InferRGS_Inefficient(x, w, phi, R):
 	#intialize y_hat structured output to random labels
 	#y_max = _getRandomY(LABELS, len(x))
 	yLen = len(x)
-	phi_y_max = np.zeros((1,d))
+	#phi_y_max = np.zeros((1,d))
 	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
-	for r in range(1,R):
+	for r in range(0,R):
 		y_test = _getRandomY(LABELS, yLen)
 		#print("y_test: "+str(y_test))
-		#evaluate all one label changes for y_test, a search space of size len(x)*k, where k is the number of labels/colors
-		for i in range(yLen):
-			c_original = str(y_test[i])
-			#evaluate all k different modifications to this label
-			for c in LABELS:
-				y_test[i] = c
-				z = phi(x, y_test, d)
-				score = w.dot(z.T)[0,0]
-				#print("score: "+str(score)+"  maxscore: "+str(maxScore))
-				if score > maxScore:
-					y_max = list(y_test)
-					phi_y_max[0,:] = z[0,:]
-					maxScore = score
-					#print("new y_max: "+str(y_max)+"  score: "+str(maxScore))
-			y_test[i] = c_original
-		#reset z to all zeroes
-		z[:,] = 0.0
+		convergence = False
+		while not convergence: #until y_test == y_local_max, keep updating single char changes
+			#evaluate all one label changes for y_test, a search space of size len(x)*k, where k is the number of labels/colors
+			localMaxScore = -10000000
+			for i in range(yLen):
+				c_original = str(y_test[i])
+				#evaluate all k different modifications to this label
+				for c in LABELS:
+					y_test[i] = c
+					z = phi(x, y_test, d)
+					score = w.dot(z.T)[0,0]
+					#print("score: "+str(score)+"  maxscore: "+str(maxScore))
+					if score > localMaxScore:
+						y_local_max = list(y_test)
+						localMaxScore = score
+						#print("new y_max: "+str(y_max)+"  score: "+str(maxScore))
+				#replace original character and continue to next position
+				y_test[i] = c_original
+		
+			#loop convergence check/update
+			if y_test == y_local_max:
+				convergence = True
+			else:
+				y_test = list(y_local_max)
+		#end while
+		
+		#update local max score and sequence as needed
+		if localMaxScore > maxScore:
+			maxScore = localMaxScore
+			y_max = list(y_local_max)
 
 	#print("ymax: "+str(y_max))
 	#print("score: "+str(maxScore))
 			
-	return y_max, phi_y_max, maxScore	
+	return y_max, phi(x, y_max, d), maxScore	
 
 """
 Checks whether or not this was a prediction error. In this case, just whether or not y* == y_hat
