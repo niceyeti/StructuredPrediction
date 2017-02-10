@@ -4,16 +4,22 @@ import matplotlib.pyplot as plt
 import random
 import sys
 
-#global labels
-#global labelSet
 XDIM = 128
+USE_TRIPLES = False
+USE_QUADS = False
 LABELS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+#prepare a set of pseudo-random numbers indices into labels in advance, of prime length, such that randint() doesn't need to be called at high frequency
+RAND_INTS = [random.randint(0,len(LABELS)-1) for i in range(0,65537)]
+RAND_RING_INDEX = 0
+RAND_INTS_LEN = len(RAND_INTS)
+
 #labels = list("ACDIGOMN")
 LABELSET = set(LABELS)
 K = len(LABELS)
 #build the lookup table of feature vector indices
 g_unaryFeatureVectorIndices = {} #key=alpha (the class) val=tuple of (start,end+1) indices of the z/w vector components corresponding with each x-yi
-for i in range(K):
+for i in range(len(LABELS)):
 	g_unaryFeatureVectorIndices[LABELS[i]] = (i*XDIM, (i+1)*XDIM)
 
 #print(str(g_unaryFeatureVectorIndices))
@@ -41,6 +47,17 @@ for alpha1 in LABELS:
 				g_quadFeatureVectorIndices[alpha1+alpha2+alpha3+alpha4] = i
 				i += 1
 
+def _getRandLabel():
+	global RAND_RING_INDEX
+	#print("RANDINTS: "+str(RAND_INTS))
+	#print("RAND INDEX: "+str(RAND_RING_INDEX))
+	c = LABELS[ RAND_INTS[RAND_RING_INDEX] ]
+	RAND_RING_INDEX += 1
+	if RAND_RING_INDEX >= RAND_INTS_LEN:
+		RAND_RING_INDEX = 0
+
+	return c
+				
 """
 [print(str(item)) for item in g_unaryFeatureVectorIndices.items() if item[0] == "A" or item[0] == "Z" or item[0]=="Y"]
 [print(str(item)) for item in g_pairwiseFeatureVectorIndices.items() if item[0] == "AA" or item[0] == "ZZ" or item[0]=="YZ"]
@@ -55,7 +72,10 @@ exit()
 Returns a random label sequence of the same length as x, as a list.
 """
 def _getRandomY(yLabels, length):
-	return [yLabels[random.randint(0,len(yLabels)-1)] for i in range(0,length)]
+	return [_getRandLabel() for i in range(0,length)]
+
+	#opted to use a prepared list of random ints instead of randint(), which is likely to be slow
+	#return [yLabels[random.randint(0,len(yLabels)-1)] for i in range(0,length)]
 
 """
 Inner driver for feature function Phi1.
@@ -109,20 +129,87 @@ def _Phi1(xseq,yseq,d):
 	for i in range(1,len(yseq)):
 		#unary features
 		urange = g_unaryFeatureVectorIndices[yseq[i]]
-		z[0,urange[0]:urange[1]] = xseq[i]
+		z[0,urange[0]:urange[1]] += xseq[i][0,:]
+		
+		#pairwise features; z_yi_i == 1 iff y_i == alpha and y_i-1 == alpha
+		pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[i-1]+yseq[i]]
+		z[0, pairwiseIndex] += 1.0
+
+	return z
+
+"""
+Includes triple-gram feature
+"""
+def _Phi2(xseq,yseq,d):
+	z = np.zeros((1,d))
+	#print("z shape: "+str(z.shape[1]))
+	#0th unary features are done first to avert if-checking index-bounds for pairwise features inside this high-frequency loop
+	urange = g_unaryFeatureVectorIndices[yseq[0]]
+	z[0,urange[0]:urange[1]] = xseq[0][0,:]
+
+	#initialize the first unary, pairwise features at index 1
+	urange = g_unaryFeatureVectorIndices[yseq[1]]
+	z[0,urange[0]:urange[1]] += xseq[1][0,:]
+	pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[0]+yseq[1]]
+	z[0, pairwiseIndex] = 1.0	#assignment, since this is the first pairwise feature
+
+	#iterate pairwise, and triples from index 2 forward
+	for i in range(2,len(yseq)):
+		#unary features
+		urange = g_unaryFeatureVectorIndices[yseq[i]]
+		z[0,urange[0]:urange[1]] += xseq[i][0,:]
 
 		#pairwise features; z_yi_i == 1 iff y_i == alpha and y_i-1 == alpha
 		pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[i-1]+yseq[i]]
 		z[0, pairwiseIndex] += 1.0
-		#print("z: "+str(z))
+
+		#triple features; z_yi_i == 1 iff y_i == alpha and y_i-1 == alpha
+		tripleIndex = g_tripleFeatureVectorIndices[yseq[i-2]+yseq[i-1]+yseq[i]]
+		z[0, tripleIndex] += 1.0
 
 	return z
-
-def _Phi2(x,y,d):
-	 pass
 	 
-def _Phi3(x,y,d):
-	 pass
+def _Phi3(xseq,yseq,d):
+	z = np.zeros((1,d))
+	#print("z shape: "+str(z.shape[1]))
+	#0th unary features are done first to avert if-checking index-bounds for pairwise features inside this high-frequency loop
+	urange = g_unaryFeatureVectorIndices[yseq[0]]
+	z[0,urange[0]:urange[1]] = xseq[0][0,:]
+			
+	#initialize the first unary and pairwise features at index 1
+	urange = g_unaryFeatureVectorIndices[yseq[1]]
+	z[0,urange[0]:urange[1]] += xseq[1][0,:]
+	pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[0]+yseq[1]]
+	z[0, pairwiseIndex] = 1.0 #assignment, since this is the first pairwise feature increment
+	
+	#initialize the first unary, pariwise, and triple at index 2
+	#unary features
+	urange = g_unaryFeatureVectorIndices[yseq[2]]
+	z[0,urange[0]:urange[1]] += xseq[2][0,:]
+	pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[1]+yseq[2]]
+	z[0, pairwiseIndex] += 1.0
+	tripleIndex = g_tripleFeatureVectorIndices[yseq[0]+yseq[1]+yseq[2]]
+	z[0, tripleIndex] = 1.0 #assignment, since this is the first triple feature increment
+
+	#iterate pairwise, triples, and quads from index 2 forward
+	for i in range(3,len(yseq)):
+		#unary features
+		urange = g_unaryFeatureVectorIndices[yseq[i]]
+		z[0,urange[0]:urange[1]] += xseq[i][0,:]
+
+		#pairwise features
+		pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[i-1]+yseq[i]]
+		z[0, pairwiseIndex] += 1.0
+
+		#triple features
+		tripleIndex = g_tripleFeatureVectorIndices[yseq[i-2]+yseq[i-1]+yseq[i]]
+		z[0, tripleIndex] += 1.0
+		
+		#quad features
+		quadIndex = g_quadFeatureVectorIndices[yseq[i-3]+yseq[i-2]+yseq[i-1]+yseq[i]]
+		z[0, quadIndex] += 1.0
+
+	return z
 
 """
 Just implements score(x,y,w) = w dot _Phi(x,y). Returns float.
@@ -145,7 +232,7 @@ Randomized greedy search inference, as specified in the hw1 spec.
 @phi: the structured feature function
 @R: the number of random restarts for the greedy search
 """
-def InferRGS(xseq,w,phi,R):
+def InferRGS(xseq, w, phi, R):
 	d = w.shape[1]
 	#intialize y_hat structured output to random labels
 	#y_max = _getRandomY(LABELS, len(xseq))
@@ -170,11 +257,17 @@ def InferRGS(xseq,w,phi,R):
 			w_xy_c_original = w[0, urange[0]:urange[1]]
 			#decrement the original unary component/feature
 			tempScore = baseScore - w_xy_c_original.dot(xi)
-			#get the pairwise component
+			#decrement all the other relevant pairwise, triple, or quad components from score
 			if i > 0:
 				pairwiseIndex = g_pairwiseFeatureVectorIndices[y_r[i-1]+cOriginal]
 				tempScore -= w[0, pairwiseIndex]
-			#TODO: triple and quad components; ALSO in loop below
+			if USE_TRIPLES and i > 1:
+				tripleIndex = g_tripleFeatureVectorIndices[y_r[i-2]+y_r[i-1]+cOriginal]
+				tempScore -= w[0, tripleIndex]
+			if USE_QUADS and i > 2:
+				quadIndex = g_quadFeatureVectorIndices[y_r[i-3]+y_r[i-2]+y_r[i-1]+cOriginal]
+				tempScore -= w[0, quadIndex]
+			
 			#evaluate all k different modifications to this label
 			for j in range(len(LABELS)):
 				c = LABELS[j]
@@ -185,13 +278,18 @@ def InferRGS(xseq,w,phi,R):
 				if i > 0:
 					pairwiseIndex = g_pairwiseFeatureVectorIndices[y_r[i-1]+c]
 					cScore += w[0, pairwiseIndex]
-				#TODO: triples and quad features
+				if USE_TRIPLES and i > 1:
+					tripleIndex = g_tripleFeatureVectorIndices[y_r[i-2]+y_r[i-1]+c]
+					cScore += w[0, tripleIndex]
+				if USE_QUADS and i > 2:
+					quadIndex = g_quadFeatureVectorIndices[y_r[i-3]+y_r[i-2]+y_r[i-1]+c]
+					cScore += w[0, quadIndex]
 
 				if cScore > maxScore:
 					maxScore = cScore
 					#save y_hat, z_y_hat
 					y_max = list(y_r)
-					y_max[i] = c
+					y_max[i] = str(c)
 
 	#print("ymax: "+str(y_max))
 	#print("score: "+str(maxScore))
@@ -234,10 +332,8 @@ if score > maxScore:
 	phi_y_max[0,:] = z[0,:]
 	#print("new y_max: "+str(y_max)+"  score: "+str(maxScore))
 """
-	
-	
-	
-def InferRGS_Inefficient(x,w,phi,R):
+
+def InferRGS_Inefficient(x, w, phi, R):
 	d = w.shape[1]
 	#intialize y_hat structured output to random labels
 	#y_max = _getRandomY(LABELS, len(x))
@@ -245,16 +341,15 @@ def InferRGS_Inefficient(x,w,phi,R):
 	phi_y_max = np.zeros((1,d))
 	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
-	for _ in range(1,R):
+	for r in range(1,R):
 		y_test = _getRandomY(LABELS, yLen)
-		z = np.zeros(shape=(1,d))
 		#print("y_test: "+str(y_test))
 		#evaluate all one label changes for y_test, a search space of size len(x)*k, where k is the number of labels/colors
-		for j in range(yLen):
-			c_original = str(y_test[j])
+		for i in range(yLen):
+			c_original = str(y_test[i])
 			#evaluate all k different modifications to this label
 			for c in LABELS:
-				y_test[j] = c
+				y_test[i] = c
 				z = phi(x, y_test, d)
 				score = w.dot(z.T)[0,0]
 				#print("score: "+str(score)+"  maxscore: "+str(maxScore))
@@ -263,7 +358,7 @@ def InferRGS_Inefficient(x,w,phi,R):
 					phi_y_max[0,:] = z[0,:]
 					maxScore = score
 					#print("new y_max: "+str(y_max)+"  score: "+str(maxScore))
-			y_test[j] = str(c_original)
+			y_test[i] = c_original
 		#reset z to all zeroes
 		z[:,] = 0.0
 
@@ -279,11 +374,12 @@ Returns: hamming loss
 """
 def _getHammingError(y_star, y_hat):
 	loss = 0
-	for i in range(0,len(y_star)):
+	length = len(y_star)
+	for i in range(0,length):
 		if y_star[i] != y_hat[i]:
 			loss += 1
 	
-	return loss
+	return loss, length
 	
 """
 Util for getting the correct phi function to pass around
@@ -380,6 +476,28 @@ def _preformatOcrData(D,phi,d):
 	return [phi(example[0], example[1], d) for example in D]
 
 """
+Given some test data, get a prediction from InferRGS()
+"""
+def TestPerceptron(w, phiNum, R, testData):
+	losses = []
+	totalChars = 0
+	phi = _getPhi(phiNum)
+	print("Testing weights, over "+str(len(testData))+" examples. This may take a while.")
+	
+	for example in testData:
+		xseq = example[0]
+		y_star = example[1]
+		y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+		loss, length = _getHammingError(y_star, y_hat)
+		losses.append(loss)
+		totalChars += length
+	
+	#get flat accuracy
+	accuracy = 100.0 * (1.0 - (float(sum(losses)) / float(totalChars)))
+	print("sum losses: "+str(sum(losses))+"  totalChars: "+str(totalChars))
+	print("Accuracy: "+str(accuracy)+"%")
+	
+"""
 @D: A list of training examples in the pairwise form [ (xseq,yseq), (xseq, yseq) ... ].
 @R: Number of restarts for RGS
 @phiNum: The structured feature function phi(x,y)
@@ -400,9 +518,11 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 
 	#a list of sum losses over an entire iteration
 	losses = []
+	correct = []
 	print("num training examples: "+str(len(D)))
 	for i in range(maxIt):
 		sumItLoss = 0.0
+		sumItCorrect = 0.0
 		for j in range(len(D)):
 			#sequential training
 			xseq, y_star = D[j]
@@ -412,23 +532,26 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 			#get predicted structured output
 			#print("j="+str(j)+" of "+str(len(D)))
 			#y_hat = _getRandomY(labels, len(y_star))
-			y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
-			#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
+			#y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+			y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
 			#print("y_hat: "+str(y_hat)+"   score: "+str(score))
 			#get the hamming loss
 			#print("ystar: "+str(y_star))
 			#print("yhat:  "+str(y_hat))
-			loss = _getHammingError(y_star, y_hat)
+			loss, length = _getHammingError(y_star, y_hat)
+			ncorrect = length - loss
 			if loss > 0:
-				#zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
+				zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
 				#zStar = phi(xseq, y_star, d)
-				w = w + eta * (phi(xseq, y_star, d) - phi_y_hat)
+				#w = w + eta * (phi(xseq, y_star, d) - phi_y_hat)
 				#w = w + eta * (zStar - phi(x, phi_y_hat, d))
-				#w = w + eta * (zStar - phi_y_hat)
+				w = w + eta * (zStar - phi_y_hat)
 			sumItLoss += loss
+			sumItCorrect += ncorrect
 		#append the total loss for this iteration, for plotting
 		losses.append(sumItLoss)
-		print("iter: "+str(i)+"  it-loss: "+str(losses[-1]))
+		correct.append(sumItCorrect)
+		print("iter: "+str(i)+"  it-loss: "+str(losses[-1])+"  sumCorrect: "+str(correct[-1]))
 
 	#plot the losses
 	xs = [i for i in range(0,len(losses))]
@@ -438,7 +561,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 	plt.ylabel("Sum Hamming Loss")
 	plt.plot(xs, losses)
 	plt.savefig("hammingLoss_Phi"+str(phiNum)+"_R"+str(R)+"_maxIt"+str(maxIt)+".png")
-	plt.show()
+	#plt.show()
 	
 	return w, losses
 
@@ -446,7 +569,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 trainPath = None
 testPath = None
 R = 10
-phi = 1
+phiNum = 1
 maxIt = 100
 eta = 0.01
 for arg in sys.argv:
@@ -457,11 +580,16 @@ for arg in sys.argv:
 	if "--eta=" in arg:
 		eta = float(arg.split("=")[1])
 	if "--phi=" in arg:
-		phi = int(arg.split("=")[1])
+		phiNum = int(arg.split("=")[1])
 	if "--maxIt=" in arg:
 		maxIt = int(arg.split("=")[1])
 	if "--R=" in arg:
 		R = int(arg.split("=")[1])
+
+if phiNum == 2:
+	USE_TRIPLES = True
+elif phiNum == 3:
+	USE_QUADS = True
 
 if trainPath == None:
 	print("ERROR no trainPath passed")
@@ -478,6 +606,6 @@ print("Executing with  maxIt="+str(maxIt)+"   R="+str(R)+"   eta="+str(eta)+"   
 
 #print(str(trainData[0]))
 #print("lenx: "+str(len(trainData[0][0]))+"  leny: "+str(len(trainData[0][1])))
-w = OnlinePerceptronTraining(trainData, R, phi, maxIt, eta)
-#TestPerceptron(w,testData)
+w, trainingLosses = OnlinePerceptronTraining(trainData, R, phiNum, maxIt, eta)
+TestPerceptron(w, phiNum, R, testData)
 
