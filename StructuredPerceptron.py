@@ -362,14 +362,14 @@ def InferRGS(xseq, w, phi, R):
 						#save y_hat, z_y_hat
 						y_local_max = list(y_test)
 						y_local_max[i] = str(c)
-				
+
 				#the convergence check/update
 				if y_local_max == y_test:
-					convergence = True					
+					convergence = True
 				else:
 					y_test = list(y_local_max)
 						
-			#end while: update the global max, as needed
+			#end while: update the global greedy max, as needed
 			if localMaxScore > maxScore:
 				maxScore = localMaxScore
 				y_max = list(y_local_max)
@@ -421,13 +421,12 @@ if score > maxScore:
 
 def InferRGS_Inefficient(x, w, phi, R):
 	d = w.shape[1]
-	#intialize y_hat structured output to random labels
-	#y_max = _getRandomY(LABELS, len(x))
 	yLen = len(x)
 	#phi_y_max = np.zeros((1,d))
 	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
 	for r in range(0,R):
+		#get a random y as a starting point for greedy search
 		y_test = _getRandomY(LABELS, yLen)
 		#print("y_test: "+str(y_test))
 		convergence = False
@@ -631,8 +630,8 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 			#get predicted structured output
 			#print("j="+str(j)+" of "+str(len(D)))
 			#y_hat = _getRandomY(labels, len(y_star))
-			#y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
-			y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
+			y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+			#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
 			#print("y_hat: "+str(y_hat)+"   score: "+str(score))
 			#get the hamming loss
 			#print("ystar: "+str(y_star))
