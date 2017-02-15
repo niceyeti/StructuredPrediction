@@ -10,9 +10,9 @@ USE_QUADS = False
 LABELS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 #prepare a set of pseudo-random numbers indices into labels in advance, of prime length, such that randint() doesn't need to be called at high frequency
-RAND_INTS = [random.randint(0,len(LABELS)-1) for i in range(0,65537)]
+RAND_LABEL_INDICES = [random.randint(0,len(LABELS)-1) for i in range(0,65537)]
 RAND_RING_INDEX = 0
-RAND_INTS_LEN = len(RAND_INTS)
+RAND_INTS_LEN = len(RAND_LABEL_INDICES)
 
 #labels = list("ACDIGOMN")
 LABELSET = set(LABELS)
@@ -47,11 +47,12 @@ for alpha1 in LABELS:
 				g_quadFeatureVectorIndices[alpha1+alpha2+alpha3+alpha4] = i
 				i += 1
 
+"""
+Gets a random label via a list of cached random numbers in the range of the length of the label set.
+"""
 def _getRandLabel():
 	global RAND_RING_INDEX
-	#print("RANDINTS: "+str(RAND_INTS))
-	#print("RAND INDEX: "+str(RAND_RING_INDEX))
-	c = LABELS[ RAND_INTS[RAND_RING_INDEX] ]
+	c = LABELS[ RAND_LABEL_INDICES[RAND_RING_INDEX] ]
 	RAND_RING_INDEX += 1
 	if RAND_RING_INDEX >= RAND_INTS_LEN:
 		RAND_RING_INDEX = 0
@@ -580,8 +581,12 @@ def TestPerceptron(w, phiNum, R, testData):
 	losses = []
 	totalChars = 0
 	phi = _getPhi(phiNum)
+	#chop test data, only test on one quarter of it
+	testData = testData[0:int(len(testData)/4)]
+	print("WARNING: Testing on only one quarter of the test data, for faster test times.")
+		
 	print("Testing weights, over "+str(len(testData))+" examples. This may take a while.")
-	
+
 	for example in testData:
 		xseq = example[0]
 		y_star = example[1]
