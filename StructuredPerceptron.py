@@ -39,11 +39,9 @@ def _buildVectorIndexDicts(xdim,labels):
 	for i in range(len(labels)):
 		g_unaryFeatureVectorIndices[labels[i]] = (i*xdim, (i+1)*xdim)
 
-	#print(str(g_unaryFeatureVectorIndices))
-	#exit()
 	#k**2 pairwise indices come immediately after the k unary indices, 
 	g_pairwiseFeatureVectorIndices = {}
-	i = k * xdim
+	i = g_unaryFeatureVectorIndices[labels[-1]][1]
 	for alpha1 in labels:
 		for alpha2 in labels:
 			g_pairwiseFeatureVectorIndices[alpha1+alpha2] = i
@@ -186,7 +184,7 @@ def _Phi2(xseq,yseq,d):
 		z[0, tripleIndex] += 1.0
 
 	return z
-	 
+
 def _Phi3(xseq,yseq,d):
 	z = np.zeros((1,d), dtype=np.float32)
 	#print("z shape: "+str(z.shape[1]))
@@ -322,7 +320,7 @@ def InferRGS(xseq, w, phi, R):
 	yLen = len(xseq)
 	maxScore = -1000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
-	for dummy in range(R):
+	for _ in range(R):
 		y_test = _getRandomY(LABELS, yLen)
 		#there is an optimization here, since only changing one label at a time, only certain components of z change in the loop below; hence one can leverage this to avoid repeated calls to phi()
 		#z = phi(xseq, y_r, d)
@@ -557,7 +555,7 @@ def _configureGlobalParameters(xdim, phiNum, dataPath):
 	K = len(LABELS)
 
 	#prepare a set of pseudo-random numbers indices into labels in advance, of prime length, such that randint() doesn't need to be called at high frequency
-	RAND_LABEL_INDICES = [random.randint(0,len(LABELS)-1) for i in range(0,65537)]
+	RAND_LABEL_INDICES = [random.randint(0,len(LABELS)-1) for i in range(0,1000000)]
 	RAND_RING_INDEX = 0
 	RAND_INTS_LEN = len(RAND_LABEL_INDICES)
 	
@@ -651,6 +649,10 @@ def TestPerceptron(w, phiNum, R, testData):
 	losses = []
 	totalChars = 0
 	phi = _getPhi(phiNum)
+	
+	#filter the data of too-short examples
+	testData = _filterShortData(testData, phiNum)
+	
 	#chop test data, only test on one quarter of it
 	testData = testData[0:int(len(testData)/4)]
 	print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
@@ -670,6 +672,14 @@ def TestPerceptron(w, phiNum, R, testData):
 	print("sum losses: "+str(sum(losses))+"  totalChars: "+str(totalChars))
 	print("Accuracy: "+str(accuracy)+"%")
 	
+def _filterShortData(D, phiNum):
+	requiredLength = 2
+	if phiNum == 2:
+		requiredLength = 3
+	if phiNum == 3:
+		requiredLength = 4
+	return [d for d in D if len(d[1]) >= requiredLength]
+
 """
 @D: A list of training examples in the pairwise form [ (xseq,yseq), (xseq, yseq) ... ].
 @R: Number of restarts for RGS
@@ -686,7 +696,11 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 	#intialize weights of scoring function to 0
 	w = np.zeros((1,dim), dtype=np.float32)
 	d = w.shape[1]
-	#get a preformatted version of the data, to help cut down on some computations
+	
+	#filter out the training examples of length less than the n-gram features
+	D = _filterShortData(D,phiNum)
+	
+	#get a preformatted cache of the data, to help cut down on constant phi re-computations
 	preprocessedData = _preformatData(D,phi,d)
 
 	#a list of sum losses over an entire iteration
@@ -714,11 +728,11 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 			loss, length = _getHammingError(y_star, y_hat)
 			ncorrect = length - loss
 			if loss > 0:
-				zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
+				#zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
 				#zStar = phi(xseq, y_star, d)
 				#w = w + eta * (phi(xseq, y_star, d) - phi_y_hat)
 				#w = w + eta * (zStar - phi(x, phi_y_hat, d))
-				w = w + eta * (zStar - phi_y_hat)
+				w = w + eta * (preprocessedData[j] - phi_y_hat)
 			sumItLoss += loss
 			sumItCorrect += ncorrect
 		#append the total loss for this iteration, for plotting
