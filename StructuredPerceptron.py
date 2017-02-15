@@ -4,48 +4,65 @@ import matplotlib.pyplot as plt
 import random
 import sys
 
-XDIM = 128
+XDIM = 0
 USE_TRIPLES = False
 USE_QUADS = False
-LABELS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+LABELS = ""
 
 #prepare a set of pseudo-random numbers indices into labels in advance, of prime length, such that randint() doesn't need to be called at high frequency
-RAND_LABEL_INDICES = [random.randint(0,len(LABELS)-1) for i in range(0,65537)]
+RAND_LABEL_INDICES = []
 RAND_RING_INDEX = 0
-RAND_INTS_LEN = len(RAND_LABEL_INDICES)
+RAND_INTS_LEN = 0
 
 #labels = list("ACDIGOMN")
-LABELSET = set(LABELS)
 K = len(LABELS)
-#build the lookup table of feature vector indices
+#create the global vector index dicts
 g_unaryFeatureVectorIndices = {} #key=alpha (the class) val=tuple of (start,end+1) indices of the z/w vector components corresponding with each x-yi
-for i in range(len(LABELS)):
-	g_unaryFeatureVectorIndices[LABELS[i]] = (i*XDIM, (i+1)*XDIM)
-
-#print(str(g_unaryFeatureVectorIndices))
-#exit()
-#k**2 pairwise indices come immediately after the k unary indices, 
 g_pairwiseFeatureVectorIndices = {}
-i = K * XDIM
-for alpha1 in LABELS:
-	for alpha2 in LABELS:
-		g_pairwiseFeatureVectorIndices[alpha1+alpha2] = i
-		i += 1
-
 g_tripleFeatureVectorIndices = {}
-for alpha1 in LABELS:
-	for alpha2 in LABELS:
-		for alpha3 in LABELS:
-			g_tripleFeatureVectorIndices[alpha1+alpha2+alpha3] = i
+g_quadFeatureVectorIndices = {}
+
+"""
+Builds the set of dictionaries for looking up indices into the feature vector.
+
+"""
+def _buildVectorIndexDicts(xdim,labels):
+	global g_unaryFeatureVectorIndices
+	global g_pairwiseFeatureVectorIndices
+	global g_tripleFeatureVectorIndices
+	global g_quadFeatureVectorIndices
+
+	k = len(labels)
+	
+	#build the lookup table of feature vector indices
+	g_unaryFeatureVectorIndices = {} #key=alpha (the class) val=tuple of (start,end+1) indices of the z/w vector components corresponding with each x-yi
+	for i in range(len(labels)):
+		g_unaryFeatureVectorIndices[labels[i]] = (i*xdim, (i+1)*xdim)
+
+	#print(str(g_unaryFeatureVectorIndices))
+	#exit()
+	#k**2 pairwise indices come immediately after the k unary indices, 
+	g_pairwiseFeatureVectorIndices = {}
+	i = k * xdim
+	for alpha1 in labels:
+		for alpha2 in labels:
+			g_pairwiseFeatureVectorIndices[alpha1+alpha2] = i
 			i += 1
 
-g_quadFeatureVectorIndices = {}
-for alpha1 in LABELS:
-	for alpha2 in LABELS:
-		for alpha3 in LABELS:
-			for alpha4 in LABELS:
-				g_quadFeatureVectorIndices[alpha1+alpha2+alpha3+alpha4] = i
+	g_tripleFeatureVectorIndices = {}
+	for alpha1 in labels:
+		for alpha2 in labels:
+			for alpha3 in labels:
+				g_tripleFeatureVectorIndices[alpha1+alpha2+alpha3] = i
 				i += 1
+
+	g_quadFeatureVectorIndices = {}
+	for alpha1 in labels:
+		for alpha2 in labels:
+			for alpha3 in labels:
+				for alpha4 in labels:
+					g_quadFeatureVectorIndices[alpha1+alpha2+alpha3+alpha4] = i
+					i += 1
 
 """
 Gets a random label via a list of cached random numbers in the range of the length of the label set.
@@ -89,7 +106,7 @@ pairwise features (y_i-1,y_i). For these cases 0 is returned.
 
 def _phi1(x,y,i,d):
 	#init an all zero vector
-	z = np.zeros((1,d))
+	z = np.zeros((1,d), dtype=np.float32)
 	
 	#print("y: "+str(y))
 	
@@ -120,12 +137,12 @@ This is phi_1 since it uses only up to pairwise features: phi(x,y) + phi(y_k,y_k
 returns: an R^d numpy vector representing the sum over all little phi features for the entire sequence
 """
 def _Phi1(xseq,yseq,d):
-	z = np.zeros((1,d))
+	z = np.zeros((1,d), dtype=np.float32)
 	#print("z shape: "+str(z.shape[1]))
 	#0th unary features are done first to avert if-checking index-bounds for pairwise features inside this high-frequency loop
 	urange = g_unaryFeatureVectorIndices[yseq[0]]
-	z[0,urange[0]:urange[1]] = xseq[0]
-			
+	z[0,urange[0]:urange[1]] = xseq[0][0,:]
+
 	#iterate pairwise and other y sequence features
 	for i in range(1,len(yseq)):
 		#unary features
@@ -139,10 +156,10 @@ def _Phi1(xseq,yseq,d):
 	return z
 
 """
-Includes triple-gram feature
+Includes up to triple-gram features
 """
 def _Phi2(xseq,yseq,d):
-	z = np.zeros((1,d))
+	z = np.zeros((1,d), dtype=np.float32)
 	#print("z shape: "+str(z.shape[1]))
 	#0th unary features are done first to avert if-checking index-bounds for pairwise features inside this high-frequency loop
 	urange = g_unaryFeatureVectorIndices[yseq[0]]
@@ -171,7 +188,7 @@ def _Phi2(xseq,yseq,d):
 	return z
 	 
 def _Phi3(xseq,yseq,d):
-	z = np.zeros((1,d))
+	z = np.zeros((1,d), dtype=np.float32)
 	#print("z shape: "+str(z.shape[1]))
 	#0th unary features are done first to avert if-checking index-bounds for pairwise features inside this high-frequency loop
 	urange = g_unaryFeatureVectorIndices[yseq[0]]
@@ -183,8 +200,7 @@ def _Phi3(xseq,yseq,d):
 	pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[0]+yseq[1]]
 	z[0, pairwiseIndex] = 1.0 #assignment, since this is the first pairwise feature increment
 	
-	#initialize the first unary, pariwise, and triple at index 2
-	#unary features
+	#initialize the first unary, pairwise, and triple at index 2
 	urange = g_unaryFeatureVectorIndices[yseq[2]]
 	z[0,urange[0]:urange[1]] += xseq[2][0,:]
 	pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[1]+yseq[2]]
@@ -237,7 +253,7 @@ def InferRGS(xseq, w, phi, R):
 	d = w.shape[1]
 	#intialize y_hat structured output to random labels
 	#y_max = _getRandomY(LABELS, len(xseq))
-	#phi_y_max = np.zeros((1,d)) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
+	#phi_y_max = np.zeros((1,d), dtype=np.float32) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
 	#maxScore = _score(xseq, y_max, w, phi)
 	yLen = len(xseq)
 	maxScore = -1000000
@@ -301,7 +317,7 @@ def InferRGS(xseq, w, phi, R):
 	d = w.shape[1]
 	#intialize y_hat structured output to random labels
 	#y_max = _getRandomY(LABELS, len(xseq))
-	#phi_y_max = np.zeros((1,d)) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
+	#phi_y_max = np.zeros((1,d), dtype=np.float32) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
 	#maxScore = _score(xseq, y_max, w, phi)
 	yLen = len(xseq)
 	maxScore = -1000000
@@ -423,7 +439,7 @@ if score > maxScore:
 def InferRGS_Inefficient(x, w, phi, R):
 	d = w.shape[1]
 	yLen = len(x)
-	#phi_y_max = np.zeros((1,d))
+	#phi_y_max = np.zeros((1,d), dtype=np.float32)
 	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
 	for r in range(0,R):
@@ -519,31 +535,85 @@ def _getDim(phiNum, xdim):
 	return dim
 
 """
+Configures all global parameters. Note that xdim is determined beforehand by the dataset.
+"""
+def _configureGlobalParameters(xdim, phiNum, dataPath):
+	global LABELS
+	global K
+	global XDIM
+	global USE_TRIPLES
+	global USE_QUADS
+	global RAND_LABEL_INDICES
+	global RAND_RING_INDEX
+	global RAND_INTS_LEN
+
+	XDIM = xdim
+	
+	#label set is simply hardcoded to nettalk or ocr datasets; this assumes nettalk dataset has been manually modified to map 01 to 'A', 02 to 'B' and so on, for simplicityss
+	if "nettalk" in dataPath:
+		LABELS = "ABCDE"
+	else:
+		LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	K = len(LABELS)
+
+	#prepare a set of pseudo-random numbers indices into labels in advance, of prime length, such that randint() doesn't need to be called at high frequency
+	RAND_LABEL_INDICES = [random.randint(0,len(LABELS)-1) for i in range(0,65537)]
+	RAND_RING_INDEX = 0
+	RAND_INTS_LEN = len(RAND_LABEL_INDICES)
+	
+	#build the vector index dictionaries
+	_buildVectorIndexDicts(XDIM,LABELS)
+	
+	USE_TRIPLES = False
+	USE_QUADS = False
+	if phiNum >= 2:
+		USE_TRIPLES = True
+	if phiNum >= 3:
+		USE_QUADS = True
+		
+	print("Global params configured")
+	print("\tLABELS: "+LABELS)
+	print("\tK: "+str(K))
+	print("\tXDIM: "+str(XDIM))
+	print("\tUSE_TRIPLES: "+str(USE_TRIPLES))
+	print("\tUSE_QUADS: "+str(USE_QUADS))
+	
+	
+	
+"""
 Utility for getting the ocr data as a dataset.
+
+Expects a dataset of tab delimited records, formatted as in the ocr and nettalk data:
+	"3	im000000010000000000000000000000010000000000000000000000100000000000000000000000000	01	_"
+
+Note that as a side-effect, this function configures the feature vector dimension component XDIM, which is determined by the dataset.
 
 Returns: A list of training examples. Each training example is a pairwise x and y sequence: ([xsequence], [ysequence])
 	xsequence: A list of real-valued numpy vectors of size m; each x vector is binary
 	ysequence: A list of symbols/labels
-
-
+	
+	Also returns xdim, the dimension of the data.
+	
 """
-def _getOcrData(dataPath):
+def _getData(dataPath):
 	#build the dataset as a list of x/y tuples
 	D = []
 	dataFile = open(dataPath,"r")
 	records = [line.strip().replace("\t"," ") for line in dataFile.readlines()]
+	dataFile.close()
 	xseq = []
 	yseq = []
+	
 	#get dimension from the first x example
-	XDIM = len(records[0].split(" ")[1].replace("im",""))
-	print("XDIM in getOCRData: "+str(XDIM))
+	xdim = len(records[0].split(" ")[1].replace("im",""))
+	
 	#exit()
 	for line in records:
 		#print("line: "+line)
 		if len(line) > 10:
 			binaryString = line.split(" ")[1].replace("im","")
 			#x = int(binaryString, 2)
-			x = np.zeros((1,XDIM))
+			x = np.zeros((1,xdim), dtype=np.float32)
 			for i in range(len(binaryString)):
 				if binaryString[i] == "1":
 					x[0,i] = 1
@@ -557,10 +627,10 @@ def _getOcrData(dataPath):
 		else:
 			high = False
 
-	return D
+	return D, xdim
 
 """
-_getOcrData returns a dataset as a list of x/y sequence pairs: [  (["0000101","00010110"],["a","t"]), etc. ]
+_getData returns a dataset as a list of x/y sequence pairs: [  (["0000101","00010110"],["a","t"]), etc. ]
 This is inefficient for the structured perceptron construction, as the binary strings must be parsed during learning to map
 each x_i to its component in an input vector. 
 
@@ -571,7 +641,7 @@ during training. Recall that each x_i binary string maps to some component of th
 Returns: The new dataset as a list of x+y numpy vectors of the required dimension, under the construction required by the Phi function.
 
 """
-def _preformatOcrData(D,phi,d):
+def _preformatData(D,phi,d):
 	return [phi(example[0], example[1], d) for example in D]
 
 """
@@ -583,7 +653,7 @@ def TestPerceptron(w, phiNum, R, testData):
 	phi = _getPhi(phiNum)
 	#chop test data, only test on one quarter of it
 	testData = testData[0:int(len(testData)/4)]
-	print("WARNING: Testing on only one quarter of the test data, for faster test times.")
+	print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
 		
 	print("Testing weights, over "+str(len(testData))+" examples. This may take a while.")
 
@@ -617,7 +687,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 	w = np.zeros((1,dim), dtype=np.float32)
 	d = w.shape[1]
 	#get a preformatted version of the data, to help cut down on some computations
-	preprocessedData = _preformatOcrData(D,phi,d)
+	preprocessedData = _preformatData(D,phi,d)
 
 	#a list of sum losses over an entire iteration
 	losses = []
@@ -664,7 +734,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 	plt.ylabel("Sum Hamming Loss")
 	plt.plot(xs, losses)
 	plt.savefig("hammingLoss_Phi"+str(phiNum)+"_R"+str(R)+"_maxIt"+str(maxIt)+".png")
-	#plt.show()
+	plt.show()
 	
 	return w, losses
 
@@ -701,11 +771,11 @@ if testPath == None:
 	print("ERROR no testPath passed")
 	exit()
 
-trainData = _getOcrData(trainPath)
-testData = _getOcrData(testPath)
+trainData, xdim = _getData(trainPath)
+testData, _ = _getData(testPath)
+_configureGlobalParameters(xdim, phiNum, trainPath)
 
-print("Executing with  maxIt="+str(maxIt)+"   R="+str(R)+"   eta="+str(eta)+"   trainPath="+trainPath+"   testPath="+testPath)
-#print(str(trainData[0]))
+print("Executing with  maxIt="+str(maxIt)+"    R="+str(R)+"    eta="+str(eta)+"    phiNum="+str(phiNum)+"    trainPath="+trainPath+"    testPath="+testPath)
 
 #print(str(trainData[0]))
 #print("lenx: "+str(len(trainData[0][0]))+"  leny: "+str(len(trainData[0][1])))
