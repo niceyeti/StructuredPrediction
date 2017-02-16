@@ -318,6 +318,8 @@ def InferRGS(xseq, w, phi, R):
 	#phi_y_max = np.zeros((1,d), dtype=np.float32) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
 	#maxScore = _score(xseq, y_max, w, phi)
 	yLen = len(xseq)
+	maxIterations = 100000
+	yLenSeq = [i for i in range(yLen)]
 	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
 	for _ in range(R):
@@ -327,12 +329,13 @@ def InferRGS(xseq, w, phi, R):
 		z = phi(xseq, y_test, d)
 		#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
 		baseScore = w.dot(z.T)[0,0]
-		y_local_max = list(y_test)
-		localMaxScore = baseScore
+		#y_local_max = y_test
+		localMaxScore = -10000000
+		iterations = 0
 		convergence = False #convergence satisfied when there is no further improvemet to be made via one character changes, eg, the label sequence does not change
 		while not convergence:
 			#until convergence, evaluate all one label changes for y_test, a search space of size len(y_test)*k, where k is the number of labels
-			for i in range(yLen):
+			for i in yLenSeq:
 				######## begin by decrementing the score by the original ith-label's components ###################
 				cOriginal = y_test[i]
 				xi = xseq[i][0,:]
@@ -354,42 +357,44 @@ def InferRGS(xseq, w, phi, R):
 				######## end decrements; now we can add individual components for each label change, below #######
 				
 				###### evaluate all k different modifications to this label, incrementing the base score by each component ###
-				for j in range(len(LABELS)):
-					c = LABELS[j]
-					urange = g_unaryFeatureVectorIndices[c]
-					w_c = w[0, urange[0]:urange[1]]
-					cScore = tempScore + w_c.dot(xi)
-					#add the pairwise component
-					if i > 0:
-						pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+c]
-						cScore += w[0, pairwiseIndex]
-					#add the triple components
-					if USE_TRIPLES and i > 1:
-						tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+c]
-						cScore += w[0, tripleIndex]
-					#add the quad components
-					if USE_QUADS and i > 2:
-						quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+c]
-						cScore += w[0, quadIndex]
+				for c in LABELS:
+					if c != cOriginal:
+						urange = g_unaryFeatureVectorIndices[c]
+						w_c = w[0, urange[0]:urange[1]]
+						cScore = tempScore + w_c.dot(xi)
+						#add all the ngram components to cScore
+						if i > 0:
+							pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+c]
+							cScore += w[0, pairwiseIndex]
+							#add the triple components
+							if USE_TRIPLES and i > 1:
+								tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+c]
+								cScore += w[0, tripleIndex]
+							#add the quad components
+							if USE_QUADS and i > 2:
+								quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+c]
+								cScore += w[0, quadIndex]
 
-					if cScore > localMaxScore:
-						localMaxScore = cScore
-						#save y_hat, z_y_hat
-						y_local_max = list(y_test)
-						y_local_max[i] = str(c)
+						if cScore > localMaxScore:
+							localMaxScore = cScore
+							#save y_hat, z_y_hat
+							y_local_max = list(y_test)
+							y_local_max[i] = c
 				### end-for: evaluate all k label changes for this position, and possibly obtained max as y_local_max and localMaxScore
 
 			### end-for (over entire sequence), check for convergence
-			if y_local_max == y_test:
+			if y_local_max == y_test or iterations > maxIterations:
 				convergence = True
 			else:
 				y_test = y_local_max
 				baseScore = localMaxScore
-
+			iterations += 1
+			#print("iterations: "+str(iterations))+"  y_test: "+str(y_test)+"     y_local_max: "+str(y_local_max), end="")
+				
 		### end while: converged to single label sequence, so update the global greedy max, as needed
 		if localMaxScore > maxScore:
 			maxScore = localMaxScore
-			y_max = list(y_local_max)
+			y_max = y_local_max
 
 	return y_max, phi(xseq, y_max, d), maxScore
 
@@ -650,7 +655,7 @@ def TestPerceptron(w, phiNum, R, testData):
 	testData = _filterShortData(testData, phiNum)
 	
 	#chop test data, only test on one quarter of it
-	testData = testData[0:int(len(testData)/4)]
+	testData = testData[0:int(len(testData)/8)]
 	print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
 		
 	print("Testing weights, over "+str(len(testData))+" examples. This may take a while.")
