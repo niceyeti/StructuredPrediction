@@ -326,14 +326,19 @@ def InferRGS(xseq, w, phi, R):
 		y_test = _getRandomY(LABELS, yLen)
 		#print("y_test: "+str(y_test))
 		#there is an optimization here, since only changing one label at a time, only certain components of z change in the loop below; hence one can leverage this to avoid repeated calls to phi()
-		z = phi(xseq, y_test, d)
+		#z = phi(xseq, y_test, d)
 		#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
-		baseScore = w.dot(z.T)[0,0]
+		#baseScore = w.dot(z.T)[0,0]
 		#y_local_max = y_test
 		localMaxScore = -10000000
 		iterations = 0
 		convergence = False #convergence satisfied when there is no further improvemet to be made via one character changes, eg, the label sequence does not change
 		while not convergence:
+			#there is an optimization here, since only changing one label at a time, only certain components of z change in the loop below; hence one can leverage this to avoid repeated calls to phi()
+			z = phi(xseq, y_test, d)
+			#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
+			baseScore = w.dot(z.T)[0,0]
+
 			#until convergence, evaluate all one label changes for y_test, a search space of size len(y_test)*k, where k is the number of labels
 			for i in yLenSeq:
 				######## begin by decrementing the score by the original ith-label's components ###################
@@ -385,6 +390,8 @@ def InferRGS(xseq, w, phi, R):
 			### end-for (over entire sequence), check for convergence
 			if y_local_max == y_test or iterations > maxIterations:
 				convergence = True
+				if iterations > maxIterations:
+					print("MAX ITERATIONS")
 			else:
 				y_test = y_local_max
 				baseScore = localMaxScore
