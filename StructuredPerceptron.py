@@ -67,13 +67,13 @@ Gets a random label via a list of cached random numbers in the range of the leng
 """
 def _getRandLabel():
 	global RAND_RING_INDEX
-	c = LABELS[ RAND_LABEL_INDICES[RAND_RING_INDEX] ]
+	
 	RAND_RING_INDEX += 1
 	if RAND_RING_INDEX >= RAND_INTS_LEN:
 		RAND_RING_INDEX = 0
 
-	return c
-				
+	return LABELS[ RAND_LABEL_INDICES[RAND_RING_INDEX] ]
+
 """
 [print(str(item)) for item in g_unaryFeatureVectorIndices.items() if item[0] == "A" or item[0] == "Z" or item[0]=="Y"]
 [print(str(item)) for item in g_pairwiseFeatureVectorIndices.items() if item[0] == "AA" or item[0] == "ZZ" or item[0]=="YZ"]
@@ -324,16 +324,13 @@ def InferRGS(xseq, w, phi, R):
 		y_test = _getRandomY(LABELS, yLen)
 		#print("y_test: "+str(y_test))
 		#there is an optimization here, since only changing one label at a time, only certain components of z change in the loop below; hence one can leverage this to avoid repeated calls to phi()
-		#z = phi(xseq, y_r, d)
-		#baseScore = w.dot(z.T)[0,0]
-		
+		z = phi(xseq, y_test, d)
+		#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
+		baseScore = w.dot(z.T)[0,0]
+		y_local_max = list(y_test)
+		localMaxScore = baseScore
 		convergence = False #convergence satisfied when there is no further improvemet to be made via one character changes, eg, the label sequence does not change
 		while not convergence:
-			#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
-			z = phi(xseq, y_test, d)
-			baseScore = w.dot(z.T)[0,0]
-			localMaxScore = -10000000
-			
 			#until convergence, evaluate all one label changes for y_test, a search space of size len(y_test)*k, where k is the number of labels
 			for i in range(yLen):
 				######## begin by decrementing the score by the original ith-label's components ###################
@@ -380,17 +377,19 @@ def InferRGS(xseq, w, phi, R):
 						#save y_hat, z_y_hat
 						y_local_max = list(y_test)
 						y_local_max[i] = str(c)
+				### end-for: evaluate all k label changes for this position, and possibly obtained max as y_local_max and localMaxScore
 
-				#the convergence check/update
-				if y_local_max == y_test:
-					convergence = True
-				else:
-					y_test = list(y_local_max)
-						
-			#end while: update the global greedy max, as needed
-			if localMaxScore > maxScore:
-				maxScore = localMaxScore
-				y_max = list(y_local_max)
+			### end-for (over entire sequence), check for convergence
+			if y_local_max == y_test:
+				convergence = True
+			else:
+				y_test = y_local_max
+				baseScore = localMaxScore
+
+		### end while: converged to single label sequence, so update the global greedy max, as needed
+		if localMaxScore > maxScore:
+			maxScore = localMaxScore
+			y_max = list(y_local_max)
 
 	return y_max, phi(xseq, y_max, d), maxScore
 
