@@ -318,10 +318,11 @@ def InferRGS(xseq, w, phi, R):
 	#phi_y_max = np.zeros((1,d), dtype=np.float32) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
 	#maxScore = _score(xseq, y_max, w, phi)
 	yLen = len(xseq)
-	maxScore = -1000000
+	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
 	for _ in range(R):
 		y_test = _getRandomY(LABELS, yLen)
+		#print("y_test: "+str(y_test))
 		#there is an optimization here, since only changing one label at a time, only certain components of z change in the loop below; hence one can leverage this to avoid repeated calls to phi()
 		#z = phi(xseq, y_r, d)
 		#baseScore = w.dot(z.T)[0,0]
@@ -331,11 +332,11 @@ def InferRGS(xseq, w, phi, R):
 			#get the initial/base score for this 'good' instance; note the math below only modifies this base score based on the single label component that changes, instead of recalculating the complete score
 			z = phi(xseq, y_test, d)
 			baseScore = w.dot(z.T)[0,0]
-			localMaxScore = -100000000
+			localMaxScore = -10000000
 			
 			#until convergence, evaluate all one label changes for y_test, a search space of size len(y_test)*k, where k is the number of labels
 			for i in range(yLen):
-				######## begin by decrementing the score by the current label's components ###################
+				######## begin by decrementing the score by the original ith-label's components ###################
 				cOriginal = y_test[i]
 				xi = xseq[i][0,:]
 				#get the unary feature component
@@ -365,9 +366,11 @@ def InferRGS(xseq, w, phi, R):
 					if i > 0:
 						pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+c]
 						cScore += w[0, pairwiseIndex]
+					#add the triple components
 					if USE_TRIPLES and i > 1:
 						tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+c]
 						cScore += w[0, tripleIndex]
+					#add the quad components
 					if USE_QUADS and i > 2:
 						quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+c]
 						cScore += w[0, quadIndex]
@@ -388,15 +391,9 @@ def InferRGS(xseq, w, phi, R):
 			if localMaxScore > maxScore:
 				maxScore = localMaxScore
 				y_max = list(y_local_max)
-			
-	#print("ymax: "+str(y_max))
-	#print("score: "+str(maxScore))
 
 	return y_max, phi(xseq, y_max, d), maxScore
 
-
-
-	
 """
 The old core loop from InferRGS
 
@@ -454,11 +451,11 @@ def InferRGS_Inefficient(x, w, phi, R):
 				for c in LABELS:
 					y_test[i] = c
 					z = phi(x, y_test, d)
-					score = w.dot(z.T)[0,0]
+					cScore = w.dot(z.T)[0,0]
 					#print("score: "+str(score)+"  maxscore: "+str(maxScore))
-					if score > localMaxScore:
+					if cScore > localMaxScore:
 						y_local_max = list(y_test)
-						localMaxScore = score
+						localMaxScore = cScore
 						#print("new y_max: "+str(y_max)+"  score: "+str(maxScore))
 				#replace original character and continue to next position
 				y_test[i] = c_original
@@ -663,6 +660,7 @@ def TestPerceptron(w, phiNum, R, testData):
 		xseq = example[0]
 		y_star = example[1]
 		y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+		#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
 		loss, length = _getHammingError(y_star, y_hat)
 		losses.append(loss)
 		totalChars += length
