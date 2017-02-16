@@ -390,8 +390,6 @@ def InferRGS(xseq, w, phi, R):
 			### end-for (over entire sequence), check for convergence
 			if y_local_max == y_test or iterations > maxIterations:
 				convergence = True
-				if iterations > maxIterations:
-					print("MAX ITERATIONS")
 			else:
 				y_test = y_local_max
 				baseScore = localMaxScore
