@@ -318,7 +318,7 @@ def InferRGS(xseq, w, phi, R):
 	#phi_y_max = np.zeros((1,d), dtype=np.float32) #the vector phi(x,y_hat,d), stored and returned so the caller need not recompute it
 	#maxScore = _score(xseq, y_max, w, phi)
 	yLen = len(xseq)
-	maxIterations = 100000
+	maxIterations = 10000
 	yLenSeq = [i for i in range(yLen)]
 	maxScore = -10000000
 	#print("y_max: "+str(y_max)+"  score: "+str(maxScore))
@@ -353,12 +353,12 @@ def InferRGS(xseq, w, phi, R):
 				if i > 0:
 					pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+cOriginal]
 					tempScore -= w[0, pairwiseIndex]
-				if USE_TRIPLES and i > 1:
-					tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+cOriginal]
-					tempScore -= w[0, tripleIndex]
-				if USE_QUADS and i > 2:
-					quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+cOriginal]
-					tempScore -= w[0, quadIndex]
+					if USE_TRIPLES and i > 1:
+						tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+cOriginal]
+						tempScore -= w[0, tripleIndex]
+						if USE_QUADS and i > 2:
+							quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+cOriginal]
+							tempScore -= w[0, quadIndex]
 				######## end decrements; now we can add individual components for each label change, below #######
 				
 				###### evaluate all k different modifications to this label, incrementing the base score by each component ###
@@ -367,7 +367,7 @@ def InferRGS(xseq, w, phi, R):
 						urange = g_unaryFeatureVectorIndices[c]
 						w_c = w[0, urange[0]:urange[1]]
 						cScore = tempScore + w_c.dot(xi)
-						#add all the ngram components to cScore
+						#add active ngram components to cScore
 						if i > 0:
 							pairwiseIndex = g_pairwiseFeatureVectorIndices[y_test[i-1]+c]
 							cScore += w[0, pairwiseIndex]
@@ -375,10 +375,10 @@ def InferRGS(xseq, w, phi, R):
 							if USE_TRIPLES and i > 1:
 								tripleIndex = g_tripleFeatureVectorIndices[y_test[i-2]+y_test[i-1]+c]
 								cScore += w[0, tripleIndex]
-							#add the quad components
-							if USE_QUADS and i > 2:
-								quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+c]
-								cScore += w[0, quadIndex]
+								#add the quad components
+								if USE_QUADS and i > 2:
+									quadIndex = g_quadFeatureVectorIndices[y_test[i-3]+y_test[i-2]+y_test[i-1]+c]
+									cScore += w[0, quadIndex]
 
 						if cScore > localMaxScore:
 							localMaxScore = cScore
@@ -386,10 +386,12 @@ def InferRGS(xseq, w, phi, R):
 							y_local_max = list(y_test)
 							y_local_max[i] = c
 				### end-for: evaluate all k label changes for this position, and possibly obtained max as y_local_max and localMaxScore
-
 			### end-for (over entire sequence), check for convergence
 			if y_local_max == y_test or iterations > maxIterations:
 				convergence = True
+				#for debugging only
+				if iterations > maxIterations:
+					print("WARNING: ITERATIONS BOTTOMED OUT IN INFER_RGS()")
 			else:
 				y_test = y_local_max
 				baseScore = localMaxScore
@@ -660,10 +662,11 @@ def TestPerceptron(w, phiNum, R, testData):
 	testData = _filterShortData(testData, phiNum)
 	
 	#chop test data, only test on one quarter of it
-	testData = testData[0:int(len(testData))]
-	print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
+	if len(testData) > 8:
+		testData = testData[0:int(len(testData)/4)]
+		print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
 		
-	print("Testing weights, over "+str(len(testData))+" examples. This may take a while.")
+	print("Testing weights over "+str(len(testData))+" examples. This may take a while.")
 
 	for example in testData:
 		xseq = example[0]
