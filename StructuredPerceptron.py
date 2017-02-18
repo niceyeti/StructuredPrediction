@@ -660,7 +660,7 @@ def TestPerceptron(w, phiNum, R, testData):
 	testData = _filterShortData(testData, phiNum)
 	
 	#chop test data, only test on one quarter of it
-	testData = testData[0:int(len(testData)/8)]
+	testData = testData[0:int(len(testData))]
 	print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
 		
 	print("Testing weights, over "+str(len(testData))+" examples. This may take a while.")
@@ -670,13 +670,16 @@ def TestPerceptron(w, phiNum, R, testData):
 		y_star = example[1]
 		y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
 		#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
+		#print("hat: "+str(y_hat))
+		#print("star: "+str(y_star))
 		loss, length = _getHammingError(y_star, y_hat)
 		losses.append(loss)
 		totalChars += length
 	
 	#get flat accuracy
+	#print("totalChars="+str(totalChars)+"    sum(losses)="+str(sum(losses)))
 	accuracy = 100.0 * (1.0 - (float(sum(losses)) / float(totalChars)))
-	print("sum losses: "+str(sum(losses))+"  totalChars: "+str(totalChars))
+	print("Sum losses: "+str(sum(losses))+"  totalChars: "+str(totalChars))
 	print("Accuracy: "+str(accuracy)+"%")
 	
 def _filterShortData(D, phiNum):
