@@ -382,26 +382,25 @@ def InferRGS(xseq, w, phi, R):
 
 						if cScore > localMaxScore:
 							localMaxScore = cScore
-							#save y_hat, z_y_hat
+							#save max character; y_local_max list can be updated outside this loop, to spare repeated list-construction
 							y_local_max = list(y_test)
 							y_local_max[i] = c
 				### end-for: evaluate all k label changes for this position, and possibly obtained max as y_local_max and localMaxScore
 			### end-for (over entire sequence), check for convergence
 			if y_local_max == y_test or iterations > maxIterations:
 				convergence = True
-				#for debugging only
-				if iterations > maxIterations:
+				#for debugging only; i just want to know if I ever bottom out in terms of iterations
+				if iterations >= maxIterations:
 					print("WARNING: ITERATIONS BOTTOMED OUT IN INFER_RGS()")
 			else:
 				y_test = y_local_max
 				baseScore = localMaxScore
 			iterations += 1
 			#print("iterations: "+str(iterations))+"  y_test: "+str(y_test)+"     y_local_max: "+str(y_local_max), end="")
-				
-		### end while: converged to single label sequence, so update the global greedy max, as needed
+		### end while: converged to single label sequence, so update the global greedy max over R iterations as needed
 		if localMaxScore > maxScore:
 			maxScore = localMaxScore
-			y_max = y_local_max
+			y_max = list(y_local_max)
 
 	return y_max, phi(xseq, y_max, d), maxScore
 
@@ -742,10 +741,9 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 			ncorrect = length - loss
 			if loss > 0:
 				#zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
-				#zStar = phi(xseq, y_star, d)
 				#w = w + eta * (phi(xseq, y_star, d) - phi_y_hat)
-				#w = w + eta * (zStar - phi(x, phi_y_hat, d))
-				w = w + eta * (preprocessedData[j] - phi_y_hat)
+				w = w + eta * (phi(xseq, y_star, d) - phi(xseq, y_hat, d))
+				#w = w + eta * (preprocessedData[j] - phi_y_hat)
 			sumItLoss += loss
 			sumItCorrect += ncorrect
 		#append the total loss for this iteration, for plotting
