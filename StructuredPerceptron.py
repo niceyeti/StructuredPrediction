@@ -239,6 +239,18 @@ def _score(x,y,w,phi):
 	"""
 	return w.dot(phi(x,y,w.shape[1]).T)[0,0]
 
+def PlotLosses(losses, datapath, show=True):
+	#plot the losses
+	xs = [i for i in range(0,len(losses))]
+	plt.ylim([0,max(losses)])
+	plt.title("Total Hamming Loss per Iteration")
+	plt.xlabel("Iteration")
+	plt.ylabel("Sum Hamming Loss")
+	plt.plot(xs, losses)
+	plt.savefig(datapath[0:5]+"_HamLoss_Phi"+str(phiNum)+"_R"+str(R)+"_maxIt"+str(maxIt)+".png")
+	if show:
+		plt.show()
+
 """
 Randomized greedy search inference, as specified in the hw1 spec.
 
@@ -750,22 +762,13 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 		losses.append(sumItLoss)
 		correct.append(sumItCorrect)
 		print("iter: "+str(i)+"  it-loss: "+str(losses[-1])+"  sumCorrect: "+str(correct[-1]))
-
-	#plot the losses
-	xs = [i for i in range(0,len(losses))]
-	plt.ylim([0,max(losses)])
-	plt.title("Total Hamming Loss per Iteration")
-	plt.xlabel("Iteration")
-	plt.ylabel("Sum Hamming Loss")
-	plt.plot(xs, losses)
-	plt.savefig("hammingLoss_Phi"+str(phiNum)+"_R"+str(R)+"_maxIt"+str(maxIt)+".png")
-	plt.show()
 	
 	return w, losses
 
 	
 trainPath = None
 testPath = None
+showPlot = False
 R = 10
 phiNum = 1
 maxIt = 100
@@ -783,6 +786,8 @@ for arg in sys.argv:
 		maxIt = int(arg.split("=")[1])
 	if "--R=" in arg:
 		R = int(arg.split("=")[1])
+	if "--showPlot" in arg:
+		showPlot = True
 
 if phiNum == 2:
 	USE_TRIPLES = True
@@ -805,5 +810,7 @@ print("Executing with  maxIt="+str(maxIt)+"    R="+str(R)+"    eta="+str(eta)+" 
 #print(str(trainData[0]))
 #print("lenx: "+str(len(trainData[0][0]))+"  leny: "+str(len(trainData[0][1])))
 w, trainingLosses = OnlinePerceptronTraining(trainData, R, phiNum, maxIt, eta)
+PlotLosses(trainingLosses, trainPath, showPlot)
+
 TestPerceptron(w, phiNum, R, testData)
 
