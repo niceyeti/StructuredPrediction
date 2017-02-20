@@ -8,7 +8,6 @@ XDIM = 0
 USE_TRIPLES = False
 USE_QUADS = False
 LABELS = ""
-
 #prepare a set of pseudo-random numbers indices into labels in advance, of prime length, such that randint() doesn't need to be called at high frequency
 RAND_LABEL_INDICES = []
 RAND_RING_INDEX = 0
@@ -88,6 +87,8 @@ exit()
 Returns a random label sequence of the same length as x, as a list.
 """
 def _getRandomY(yLabels, length):
+	#c = _getRandLabel()
+	#return [c for i in range(0,length)]
 	return [_getRandLabel() for i in range(0,length)]
 
 	#opted to use a prepared list of random ints instead of randint(), which is likely to be slow
