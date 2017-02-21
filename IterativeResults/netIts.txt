@@ -1,0 +1,256 @@
+Global params configured
+	LABELS: ABCDE
+	K: 5
+	XDIM: 81
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=1    R=20    eta=0.01    phiNum=1    trainPath=../nettalk_stress_train.txt    testPath=../nettalk_stress_test.txt
+xdim: 81
+wdim: 430
+num training examples: 1000
+iter: 0  it-loss: 2236.0  sumCorrect: 4994.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 250 examples. This may take a while.
+Sum losses: 498  totalChars: 1666
+Accuracy: 70.10804321728692%
+Global params configured
+	LABELS: ABCDE
+	K: 5
+	XDIM: 81
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=10    R=20    eta=0.01    phiNum=1    trainPath=../nettalk_stress_train.txt    testPath=../nettalk_stress_test.txt
+xdim: 81
+wdim: 430
+num training examples: 1000
+iter: 0  it-loss: 2241.0  sumCorrect: 4989.0
+iter: 1  it-loss: 2070.0  sumCorrect: 5160.0
+iter: 2  it-loss: 2130.0  sumCorrect: 5100.0
+iter: 3  it-loss: 2043.0  sumCorrect: 5187.0
+iter: 4  it-loss: 2074.0  sumCorrect: 5156.0
+iter: 5  it-loss: 2028.0  sumCorrect: 5202.0
+iter: 6  it-loss: 2042.0  sumCorrect: 5188.0
+iter: 7  it-loss: 2044.0  sumCorrect: 5186.0
+iter: 8  it-loss: 2048.0  sumCorrect: 5182.0
+iter: 9  it-loss: 1993.0  sumCorrect: 5237.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 250 examples. This may take a while.
+Sum losses: 487  totalChars: 1666
+Accuracy: 70.76830732292918%
+Global params configured
+	LABELS: ABCDE
+	K: 5
+	XDIM: 81
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=25    R=20    eta=0.01    phiNum=1    trainPath=../nettalk_stress_train.txt    testPath=../nettalk_stress_test.txt
+xdim: 81
+wdim: 430
+num training examples: 1000
+iter: 0  it-loss: 2212.0  sumCorrect: 5018.0
+iter: 1  it-loss: 2079.0  sumCorrect: 5151.0
+iter: 2  it-loss: 2069.0  sumCorrect: 5161.0
+iter: 3  it-loss: 2023.0  sumCorrect: 5207.0
+iter: 4  it-loss: 2013.0  sumCorrect: 5217.0
+iter: 5  it-loss: 2010.0  sumCorrect: 5220.0
+iter: 6  it-loss: 2054.0  sumCorrect: 5176.0
+iter: 7  it-loss: 2013.0  sumCorrect: 5217.0
+iter: 8  it-loss: 2043.0  sumCorrect: 5187.0
+iter: 9  it-loss: 1983.0  sumCorrect: 5247.0
+iter: 10  it-loss: 1972.0  sumCorrect: 5258.0
+iter: 11  it-loss: 1988.0  sumCorrect: 5242.0
+iter: 12  it-loss: 2052.0  sumCorrect: 5178.0
+iter: 13  it-loss: 1961.0  sumCorrect: 5269.0
+iter: 14  it-loss: 2002.0  sumCorrect: 5228.0
+iter: 15  it-loss: 2011.0  sumCorrect: 5219.0
+iter: 16  it-loss: 2010.0  sumCorrect: 5220.0
+iter: 17  it-loss: 2017.0  sumCorrect: 5213.0
+iter: 18  it-loss: 2033.0  sumCorrect: 5197.0
+iter: 19  it-loss: 1986.0  sumCorrect: 5244.0
+iter: 20  it-loss: 2024.0  sumCorrect: 5206.0
+iter: 21  it-loss: 2013.0  sumCorrect: 5217.0
+iter: 22  it-loss: 2004.0  sumCorrect: 5226.0
+iter: 23  it-loss: 2002.0  sumCorrect: 5228.0
+iter: 24  it-loss: 1998.0  sumCorrect: 5232.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 250 examples. This may take a while.
+Sum losses: 463  totalChars: 1666
+Accuracy: 72.20888355342137%
+Global params configured
+	LABELS: ABCDE
+	K: 5
+	XDIM: 81
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=50    R=20    eta=0.01    phiNum=1    trainPath=../nettalk_stress_train.txt    testPath=../nettalk_stress_test.txt
+xdim: 81
+wdim: 430
+num training examples: 1000
+iter: 0  it-loss: 2230.0  sumCorrect: 5000.0
+iter: 1  it-loss: 2113.0  sumCorrect: 5117.0
+iter: 2  it-loss: 2030.0  sumCorrect: 5200.0
+iter: 3  it-loss: 2030.0  sumCorrect: 5200.0
+iter: 4  it-loss: 2058.0  sumCorrect: 5172.0
+iter: 5  it-loss: 2079.0  sumCorrect: 5151.0
+iter: 6  it-loss: 1966.0  sumCorrect: 5264.0
+iter: 7  it-loss: 2065.0  sumCorrect: 5165.0
+iter: 8  it-loss: 2013.0  sumCorrect: 5217.0
+iter: 9  it-loss: 2071.0  sumCorrect: 5159.0
+iter: 10  it-loss: 1974.0  sumCorrect: 5256.0
+iter: 11  it-loss: 2010.0  sumCorrect: 5220.0
+iter: 12  it-loss: 1965.0  sumCorrect: 5265.0
+iter: 13  it-loss: 2006.0  sumCorrect: 5224.0
+iter: 14  it-loss: 2017.0  sumCorrect: 5213.0
+iter: 15  it-loss: 1975.0  sumCorrect: 5255.0
+iter: 16  it-loss: 1999.0  sumCorrect: 5231.0
+iter: 17  it-loss: 1978.0  sumCorrect: 5252.0
+iter: 18  it-loss: 1995.0  sumCorrect: 5235.0
+iter: 19  it-loss: 2001.0  sumCorrect: 5229.0
+iter: 20  it-loss: 1981.0  sumCorrect: 5249.0
+iter: 21  it-loss: 2028.0  sumCorrect: 5202.0
+iter: 22  it-loss: 2026.0  sumCorrect: 5204.0
+iter: 23  it-loss: 1983.0  sumCorrect: 5247.0
+iter: 24  it-loss: 1982.0  sumCorrect: 5248.0
+iter: 25  it-loss: 2011.0  sumCorrect: 5219.0
+iter: 26  it-loss: 2031.0  sumCorrect: 5199.0
+iter: 27  it-loss: 1985.0  sumCorrect: 5245.0
+iter: 28  it-loss: 2020.0  sumCorrect: 5210.0
+iter: 29  it-loss: 2064.0  sumCorrect: 5166.0
+iter: 30  it-loss: 2022.0  sumCorrect: 5208.0
+iter: 31  it-loss: 2045.0  sumCorrect: 5185.0
+iter: 32  it-loss: 1988.0  sumCorrect: 5242.0
+iter: 33  it-loss: 1985.0  sumCorrect: 5245.0
+iter: 34  it-loss: 1979.0  sumCorrect: 5251.0
+iter: 35  it-loss: 1983.0  sumCorrect: 5247.0
+iter: 36  it-loss: 1970.0  sumCorrect: 5260.0
+iter: 37  it-loss: 1999.0  sumCorrect: 5231.0
+iter: 38  it-loss: 1946.0  sumCorrect: 5284.0
+iter: 39  it-loss: 1981.0  sumCorrect: 5249.0
+iter: 40  it-loss: 2043.0  sumCorrect: 5187.0
+iter: 41  it-loss: 1972.0  sumCorrect: 5258.0
+iter: 42  it-loss: 1952.0  sumCorrect: 5278.0
+iter: 43  it-loss: 1974.0  sumCorrect: 5256.0
+iter: 44  it-loss: 1979.0  sumCorrect: 5251.0
+iter: 45  it-loss: 1962.0  sumCorrect: 5268.0
+iter: 46  it-loss: 1997.0  sumCorrect: 5233.0
+iter: 47  it-loss: 2023.0  sumCorrect: 5207.0
+iter: 48  it-loss: 1980.0  sumCorrect: 5250.0
+iter: 49  it-loss: 1977.0  sumCorrect: 5253.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 250 examples. This may take a while.
+Sum losses: 463  totalChars: 1666
+Accuracy: 72.20888355342137%
+Global params configured
+	LABELS: ABCDE
+	K: 5
+	XDIM: 81
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=100    R=20    eta=0.01    phiNum=1    trainPath=../nettalk_stress_train.txt    testPath=../nettalk_stress_test.txt
+xdim: 81
+wdim: 430
+num training examples: 1000
+iter: 0  it-loss: 2226.0  sumCorrect: 5004.0
+iter: 1  it-loss: 2047.0  sumCorrect: 5183.0
+iter: 2  it-loss: 2012.0  sumCorrect: 5218.0
+iter: 3  it-loss: 2022.0  sumCorrect: 5208.0
+iter: 4  it-loss: 2045.0  sumCorrect: 5185.0
+iter: 5  it-loss: 1981.0  sumCorrect: 5249.0
+iter: 6  it-loss: 2031.0  sumCorrect: 5199.0
+iter: 7  it-loss: 2015.0  sumCorrect: 5215.0
+iter: 8  it-loss: 2007.0  sumCorrect: 5223.0
+iter: 9  it-loss: 2030.0  sumCorrect: 5200.0
+iter: 10  it-loss: 2000.0  sumCorrect: 5230.0
+iter: 11  it-loss: 2018.0  sumCorrect: 5212.0
+iter: 12  it-loss: 2024.0  sumCorrect: 5206.0
+iter: 13  it-loss: 1978.0  sumCorrect: 5252.0
+iter: 14  it-loss: 2003.0  sumCorrect: 5227.0
+iter: 15  it-loss: 2009.0  sumCorrect: 5221.0
+iter: 16  it-loss: 1985.0  sumCorrect: 5245.0
+iter: 17  it-loss: 1977.0  sumCorrect: 5253.0
+iter: 18  it-loss: 2018.0  sumCorrect: 5212.0
+iter: 19  it-loss: 2043.0  sumCorrect: 5187.0
+iter: 20  it-loss: 2033.0  sumCorrect: 5197.0
+iter: 21  it-loss: 1988.0  sumCorrect: 5242.0
+iter: 22  it-loss: 2004.0  sumCorrect: 5226.0
+iter: 23  it-loss: 2016.0  sumCorrect: 5214.0
+iter: 24  it-loss: 2009.0  sumCorrect: 5221.0
+iter: 25  it-loss: 1990.0  sumCorrect: 5240.0
+iter: 26  it-loss: 1979.0  sumCorrect: 5251.0
+iter: 27  it-loss: 2023.0  sumCorrect: 5207.0
+iter: 28  it-loss: 2025.0  sumCorrect: 5205.0
+iter: 29  it-loss: 2019.0  sumCorrect: 5211.0
+iter: 30  it-loss: 1966.0  sumCorrect: 5264.0
+iter: 31  it-loss: 2024.0  sumCorrect: 5206.0
+iter: 32  it-loss: 2022.0  sumCorrect: 5208.0
+iter: 33  it-loss: 2024.0  sumCorrect: 5206.0
+iter: 34  it-loss: 2018.0  sumCorrect: 5212.0
+iter: 35  it-loss: 1982.0  sumCorrect: 5248.0
+iter: 36  it-loss: 1938.0  sumCorrect: 5292.0
+iter: 37  it-loss: 2030.0  sumCorrect: 5200.0
+iter: 38  it-loss: 1962.0  sumCorrect: 5268.0
+iter: 39  it-loss: 2000.0  sumCorrect: 5230.0
+iter: 40  it-loss: 1996.0  sumCorrect: 5234.0
+iter: 41  it-loss: 2020.0  sumCorrect: 5210.0
+iter: 42  it-loss: 2003.0  sumCorrect: 5227.0
+iter: 43  it-loss: 1949.0  sumCorrect: 5281.0
+iter: 44  it-loss: 1999.0  sumCorrect: 5231.0
+iter: 45  it-loss: 2048.0  sumCorrect: 5182.0
+iter: 46  it-loss: 2043.0  sumCorrect: 5187.0
+iter: 47  it-loss: 2006.0  sumCorrect: 5224.0
+iter: 48  it-loss: 2003.0  sumCorrect: 5227.0
+iter: 49  it-loss: 1992.0  sumCorrect: 5238.0
+iter: 50  it-loss: 1980.0  sumCorrect: 5250.0
+iter: 51  it-loss: 1971.0  sumCorrect: 5259.0
+iter: 52  it-loss: 1991.0  sumCorrect: 5239.0
+iter: 53  it-loss: 1971.0  sumCorrect: 5259.0
+iter: 54  it-loss: 1990.0  sumCorrect: 5240.0
+iter: 55  it-loss: 1977.0  sumCorrect: 5253.0
+iter: 56  it-loss: 1971.0  sumCorrect: 5259.0
+iter: 57  it-loss: 2048.0  sumCorrect: 5182.0
+iter: 58  it-loss: 2017.0  sumCorrect: 5213.0
+iter: 59  it-loss: 2045.0  sumCorrect: 5185.0
+iter: 60  it-loss: 2006.0  sumCorrect: 5224.0
+iter: 61  it-loss: 2035.0  sumCorrect: 5195.0
+iter: 62  it-loss: 1984.0  sumCorrect: 5246.0
+iter: 63  it-loss: 2010.0  sumCorrect: 5220.0
+iter: 64  it-loss: 2016.0  sumCorrect: 5214.0
+iter: 65  it-loss: 2022.0  sumCorrect: 5208.0
+iter: 66  it-loss: 1952.0  sumCorrect: 5278.0
+iter: 67  it-loss: 2011.0  sumCorrect: 5219.0
+iter: 68  it-loss: 1987.0  sumCorrect: 5243.0
+iter: 69  it-loss: 1972.0  sumCorrect: 5258.0
+iter: 70  it-loss: 1985.0  sumCorrect: 5245.0
+iter: 71  it-loss: 1975.0  sumCorrect: 5255.0
+iter: 72  it-loss: 2017.0  sumCorrect: 5213.0
+iter: 73  it-loss: 2009.0  sumCorrect: 5221.0
+iter: 74  it-loss: 2040.0  sumCorrect: 5190.0
+iter: 75  it-loss: 2006.0  sumCorrect: 5224.0
+iter: 76  it-loss: 1969.0  sumCorrect: 5261.0
+iter: 77  it-loss: 1974.0  sumCorrect: 5256.0
+iter: 78  it-loss: 1961.0  sumCorrect: 5269.0
+iter: 79  it-loss: 1984.0  sumCorrect: 5246.0
+iter: 80  it-loss: 2035.0  sumCorrect: 5195.0
+iter: 81  it-loss: 1997.0  sumCorrect: 5233.0
+iter: 82  it-loss: 2010.0  sumCorrect: 5220.0
+iter: 83  it-loss: 1984.0  sumCorrect: 5246.0
+iter: 84  it-loss: 1944.0  sumCorrect: 5286.0
+iter: 85  it-loss: 1995.0  sumCorrect: 5235.0
+iter: 86  it-loss: 1983.0  sumCorrect: 5247.0
+iter: 87  it-loss: 1997.0  sumCorrect: 5233.0
+iter: 88  it-loss: 1967.0  sumCorrect: 5263.0
+iter: 89  it-loss: 2000.0  sumCorrect: 5230.0
+iter: 90  it-loss: 1964.0  sumCorrect: 5266.0
+iter: 91  it-loss: 1989.0  sumCorrect: 5241.0
+iter: 92  it-loss: 1986.0  sumCorrect: 5244.0
+iter: 93  it-loss: 2002.0  sumCorrect: 5228.0
+iter: 94  it-loss: 2023.0  sumCorrect: 5207.0
+iter: 95  it-loss: 1967.0  sumCorrect: 5263.0
+iter: 96  it-loss: 1991.0  sumCorrect: 5239.0
+iter: 97  it-loss: 1987.0  sumCorrect: 5243.0
+iter: 98  it-loss: 1994.0  sumCorrect: 5236.0
+iter: 99  it-loss: 1977.0  sumCorrect: 5253.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 250 examples. This may take a while.
+Sum losses: 495  totalChars: 1666
+Accuracy: 70.28811524609844%

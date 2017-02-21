@@ -1,0 +1,256 @@
+Global params configured
+	LABELS: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	K: 26
+	XDIM: 128
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=1    R=20    eta=0.01    phiNum=1    trainPath=../ocr_fold0_sm_train.txt    testPath=../ocr_fold0_sm_test.txt
+xdim: 128
+wdim: 4004
+num training examples: 626
+iter: 0  it-loss: 1709.0  sumCorrect: 2908.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 1562 examples. This may take a while.
+Sum losses: 6191  totalChars: 11789
+Accuracy: 47.484943591483585%
+Global params configured
+	LABELS: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	K: 26
+	XDIM: 128
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=10    R=20    eta=0.01    phiNum=1    trainPath=../ocr_fold0_sm_train.txt    testPath=../ocr_fold0_sm_test.txt
+xdim: 128
+wdim: 4004
+num training examples: 626
+iter: 0  it-loss: 1713.0  sumCorrect: 2904.0
+iter: 1  it-loss: 1357.0  sumCorrect: 3260.0
+iter: 2  it-loss: 1184.0  sumCorrect: 3433.0
+iter: 3  it-loss: 1155.0  sumCorrect: 3462.0
+iter: 4  it-loss: 1140.0  sumCorrect: 3477.0
+iter: 5  it-loss: 1094.0  sumCorrect: 3523.0
+iter: 6  it-loss: 1063.0  sumCorrect: 3554.0
+iter: 7  it-loss: 1043.0  sumCorrect: 3574.0
+iter: 8  it-loss: 1069.0  sumCorrect: 3548.0
+iter: 9  it-loss: 1036.0  sumCorrect: 3581.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 1562 examples. This may take a while.
+Sum losses: 5045  totalChars: 11789
+Accuracy: 57.20586987870049%
+Global params configured
+	LABELS: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	K: 26
+	XDIM: 128
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=25    R=20    eta=0.01    phiNum=1    trainPath=../ocr_fold0_sm_train.txt    testPath=../ocr_fold0_sm_test.txt
+xdim: 128
+wdim: 4004
+num training examples: 626
+iter: 0  it-loss: 1729.0  sumCorrect: 2888.0
+iter: 1  it-loss: 1324.0  sumCorrect: 3293.0
+iter: 2  it-loss: 1206.0  sumCorrect: 3411.0
+iter: 3  it-loss: 1149.0  sumCorrect: 3468.0
+iter: 4  it-loss: 1116.0  sumCorrect: 3501.0
+iter: 5  it-loss: 1059.0  sumCorrect: 3558.0
+iter: 6  it-loss: 1042.0  sumCorrect: 3575.0
+iter: 7  it-loss: 1047.0  sumCorrect: 3570.0
+iter: 8  it-loss: 999.0  sumCorrect: 3618.0
+iter: 9  it-loss: 1025.0  sumCorrect: 3592.0
+iter: 10  it-loss: 1028.0  sumCorrect: 3589.0
+iter: 11  it-loss: 1020.0  sumCorrect: 3597.0
+iter: 12  it-loss: 1000.0  sumCorrect: 3617.0
+iter: 13  it-loss: 934.0  sumCorrect: 3683.0
+iter: 14  it-loss: 959.0  sumCorrect: 3658.0
+iter: 15  it-loss: 985.0  sumCorrect: 3632.0
+iter: 16  it-loss: 977.0  sumCorrect: 3640.0
+iter: 17  it-loss: 928.0  sumCorrect: 3689.0
+iter: 18  it-loss: 947.0  sumCorrect: 3670.0
+iter: 19  it-loss: 923.0  sumCorrect: 3694.0
+iter: 20  it-loss: 917.0  sumCorrect: 3700.0
+iter: 21  it-loss: 952.0  sumCorrect: 3665.0
+iter: 22  it-loss: 897.0  sumCorrect: 3720.0
+iter: 23  it-loss: 920.0  sumCorrect: 3697.0
+iter: 24  it-loss: 886.0  sumCorrect: 3731.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 1562 examples. This may take a while.
+Sum losses: 4231  totalChars: 11789
+Accuracy: 64.1106115870727%
+Global params configured
+	LABELS: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	K: 26
+	XDIM: 128
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=50    R=20    eta=0.01    phiNum=1    trainPath=../ocr_fold0_sm_train.txt    testPath=../ocr_fold0_sm_test.txt
+xdim: 128
+wdim: 4004
+num training examples: 626
+iter: 0  it-loss: 1717.0  sumCorrect: 2900.0
+iter: 1  it-loss: 1266.0  sumCorrect: 3351.0
+iter: 2  it-loss: 1255.0  sumCorrect: 3362.0
+iter: 3  it-loss: 1203.0  sumCorrect: 3414.0
+iter: 4  it-loss: 1144.0  sumCorrect: 3473.0
+iter: 5  it-loss: 1082.0  sumCorrect: 3535.0
+iter: 6  it-loss: 1091.0  sumCorrect: 3526.0
+iter: 7  it-loss: 1037.0  sumCorrect: 3580.0
+iter: 8  it-loss: 1072.0  sumCorrect: 3545.0
+iter: 9  it-loss: 1003.0  sumCorrect: 3614.0
+iter: 10  it-loss: 1016.0  sumCorrect: 3601.0
+iter: 11  it-loss: 1037.0  sumCorrect: 3580.0
+iter: 12  it-loss: 995.0  sumCorrect: 3622.0
+iter: 13  it-loss: 967.0  sumCorrect: 3650.0
+iter: 14  it-loss: 991.0  sumCorrect: 3626.0
+iter: 15  it-loss: 967.0  sumCorrect: 3650.0
+iter: 16  it-loss: 964.0  sumCorrect: 3653.0
+iter: 17  it-loss: 974.0  sumCorrect: 3643.0
+iter: 18  it-loss: 926.0  sumCorrect: 3691.0
+iter: 19  it-loss: 889.0  sumCorrect: 3728.0
+iter: 20  it-loss: 960.0  sumCorrect: 3657.0
+iter: 21  it-loss: 928.0  sumCorrect: 3689.0
+iter: 22  it-loss: 899.0  sumCorrect: 3718.0
+iter: 23  it-loss: 867.0  sumCorrect: 3750.0
+iter: 24  it-loss: 908.0  sumCorrect: 3709.0
+iter: 25  it-loss: 945.0  sumCorrect: 3672.0
+iter: 26  it-loss: 899.0  sumCorrect: 3718.0
+iter: 27  it-loss: 929.0  sumCorrect: 3688.0
+iter: 28  it-loss: 911.0  sumCorrect: 3706.0
+iter: 29  it-loss: 877.0  sumCorrect: 3740.0
+iter: 30  it-loss: 915.0  sumCorrect: 3702.0
+iter: 31  it-loss: 887.0  sumCorrect: 3730.0
+iter: 32  it-loss: 872.0  sumCorrect: 3745.0
+iter: 33  it-loss: 887.0  sumCorrect: 3730.0
+iter: 34  it-loss: 890.0  sumCorrect: 3727.0
+iter: 35  it-loss: 890.0  sumCorrect: 3727.0
+iter: 36  it-loss: 862.0  sumCorrect: 3755.0
+iter: 37  it-loss: 865.0  sumCorrect: 3752.0
+iter: 38  it-loss: 900.0  sumCorrect: 3717.0
+iter: 39  it-loss: 863.0  sumCorrect: 3754.0
+iter: 40  it-loss: 860.0  sumCorrect: 3757.0
+iter: 41  it-loss: 855.0  sumCorrect: 3762.0
+iter: 42  it-loss: 852.0  sumCorrect: 3765.0
+iter: 43  it-loss: 846.0  sumCorrect: 3771.0
+iter: 44  it-loss: 861.0  sumCorrect: 3756.0
+iter: 45  it-loss: 860.0  sumCorrect: 3757.0
+iter: 46  it-loss: 852.0  sumCorrect: 3765.0
+iter: 47  it-loss: 852.0  sumCorrect: 3765.0
+iter: 48  it-loss: 852.0  sumCorrect: 3765.0
+iter: 49  it-loss: 827.0  sumCorrect: 3790.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 1562 examples. This may take a while.
+Sum losses: 4390  totalChars: 11789
+Accuracy: 62.76189668334888%
+Global params configured
+	LABELS: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	K: 26
+	XDIM: 128
+	USE_TRIPLES: False
+	USE_QUADS: False
+Executing with  maxIt=100    R=20    eta=0.01    phiNum=1    trainPath=../ocr_fold0_sm_train.txt    testPath=../ocr_fold0_sm_test.txt
+xdim: 128
+wdim: 4004
+num training examples: 626
+iter: 0  it-loss: 1739.0  sumCorrect: 2878.0
+iter: 1  it-loss: 1314.0  sumCorrect: 3303.0
+iter: 2  it-loss: 1217.0  sumCorrect: 3400.0
+iter: 3  it-loss: 1193.0  sumCorrect: 3424.0
+iter: 4  it-loss: 1147.0  sumCorrect: 3470.0
+iter: 5  it-loss: 1102.0  sumCorrect: 3515.0
+iter: 6  it-loss: 1078.0  sumCorrect: 3539.0
+iter: 7  it-loss: 1045.0  sumCorrect: 3572.0
+iter: 8  it-loss: 1040.0  sumCorrect: 3577.0
+iter: 9  it-loss: 1030.0  sumCorrect: 3587.0
+iter: 10  it-loss: 1011.0  sumCorrect: 3606.0
+iter: 11  it-loss: 1006.0  sumCorrect: 3611.0
+iter: 12  it-loss: 1019.0  sumCorrect: 3598.0
+iter: 13  it-loss: 985.0  sumCorrect: 3632.0
+iter: 14  it-loss: 971.0  sumCorrect: 3646.0
+iter: 15  it-loss: 935.0  sumCorrect: 3682.0
+iter: 16  it-loss: 914.0  sumCorrect: 3703.0
+iter: 17  it-loss: 975.0  sumCorrect: 3642.0
+iter: 18  it-loss: 980.0  sumCorrect: 3637.0
+iter: 19  it-loss: 934.0  sumCorrect: 3683.0
+iter: 20  it-loss: 956.0  sumCorrect: 3661.0
+iter: 21  it-loss: 930.0  sumCorrect: 3687.0
+iter: 22  it-loss: 930.0  sumCorrect: 3687.0
+iter: 23  it-loss: 909.0  sumCorrect: 3708.0
+iter: 24  it-loss: 904.0  sumCorrect: 3713.0
+iter: 25  it-loss: 931.0  sumCorrect: 3686.0
+iter: 26  it-loss: 868.0  sumCorrect: 3749.0
+iter: 27  it-loss: 899.0  sumCorrect: 3718.0
+iter: 28  it-loss: 891.0  sumCorrect: 3726.0
+iter: 29  it-loss: 907.0  sumCorrect: 3710.0
+iter: 30  it-loss: 898.0  sumCorrect: 3719.0
+iter: 31  it-loss: 879.0  sumCorrect: 3738.0
+iter: 32  it-loss: 890.0  sumCorrect: 3727.0
+iter: 33  it-loss: 876.0  sumCorrect: 3741.0
+iter: 34  it-loss: 865.0  sumCorrect: 3752.0
+iter: 35  it-loss: 900.0  sumCorrect: 3717.0
+iter: 36  it-loss: 867.0  sumCorrect: 3750.0
+iter: 37  it-loss: 848.0  sumCorrect: 3769.0
+iter: 38  it-loss: 864.0  sumCorrect: 3753.0
+iter: 39  it-loss: 866.0  sumCorrect: 3751.0
+iter: 40  it-loss: 855.0  sumCorrect: 3762.0
+iter: 41  it-loss: 871.0  sumCorrect: 3746.0
+iter: 42  it-loss: 832.0  sumCorrect: 3785.0
+iter: 43  it-loss: 820.0  sumCorrect: 3797.0
+iter: 44  it-loss: 876.0  sumCorrect: 3741.0
+iter: 45  it-loss: 852.0  sumCorrect: 3765.0
+iter: 46  it-loss: 866.0  sumCorrect: 3751.0
+iter: 47  it-loss: 849.0  sumCorrect: 3768.0
+iter: 48  it-loss: 884.0  sumCorrect: 3733.0
+iter: 49  it-loss: 855.0  sumCorrect: 3762.0
+iter: 50  it-loss: 845.0  sumCorrect: 3772.0
+iter: 51  it-loss: 827.0  sumCorrect: 3790.0
+iter: 52  it-loss: 822.0  sumCorrect: 3795.0
+iter: 53  it-loss: 819.0  sumCorrect: 3798.0
+iter: 54  it-loss: 850.0  sumCorrect: 3767.0
+iter: 55  it-loss: 808.0  sumCorrect: 3809.0
+iter: 56  it-loss: 864.0  sumCorrect: 3753.0
+iter: 57  it-loss: 835.0  sumCorrect: 3782.0
+iter: 58  it-loss: 834.0  sumCorrect: 3783.0
+iter: 59  it-loss: 776.0  sumCorrect: 3841.0
+iter: 60  it-loss: 802.0  sumCorrect: 3815.0
+iter: 61  it-loss: 841.0  sumCorrect: 3776.0
+iter: 62  it-loss: 831.0  sumCorrect: 3786.0
+iter: 63  it-loss: 835.0  sumCorrect: 3782.0
+iter: 64  it-loss: 815.0  sumCorrect: 3802.0
+iter: 65  it-loss: 827.0  sumCorrect: 3790.0
+iter: 66  it-loss: 829.0  sumCorrect: 3788.0
+iter: 67  it-loss: 789.0  sumCorrect: 3828.0
+iter: 68  it-loss: 832.0  sumCorrect: 3785.0
+iter: 69  it-loss: 824.0  sumCorrect: 3793.0
+iter: 70  it-loss: 783.0  sumCorrect: 3834.0
+iter: 71  it-loss: 782.0  sumCorrect: 3835.0
+iter: 72  it-loss: 842.0  sumCorrect: 3775.0
+iter: 73  it-loss: 791.0  sumCorrect: 3826.0
+iter: 74  it-loss: 812.0  sumCorrect: 3805.0
+iter: 75  it-loss: 816.0  sumCorrect: 3801.0
+iter: 76  it-loss: 804.0  sumCorrect: 3813.0
+iter: 77  it-loss: 786.0  sumCorrect: 3831.0
+iter: 78  it-loss: 806.0  sumCorrect: 3811.0
+iter: 79  it-loss: 834.0  sumCorrect: 3783.0
+iter: 80  it-loss: 802.0  sumCorrect: 3815.0
+iter: 81  it-loss: 857.0  sumCorrect: 3760.0
+iter: 82  it-loss: 794.0  sumCorrect: 3823.0
+iter: 83  it-loss: 750.0  sumCorrect: 3867.0
+iter: 84  it-loss: 785.0  sumCorrect: 3832.0
+iter: 85  it-loss: 797.0  sumCorrect: 3820.0
+iter: 86  it-loss: 832.0  sumCorrect: 3785.0
+iter: 87  it-loss: 826.0  sumCorrect: 3791.0
+iter: 88  it-loss: 856.0  sumCorrect: 3761.0
+iter: 89  it-loss: 827.0  sumCorrect: 3790.0
+iter: 90  it-loss: 781.0  sumCorrect: 3836.0
+iter: 91  it-loss: 816.0  sumCorrect: 3801.0
+iter: 92  it-loss: 757.0  sumCorrect: 3860.0
+iter: 93  it-loss: 792.0  sumCorrect: 3825.0
+iter: 94  it-loss: 799.0  sumCorrect: 3818.0
+iter: 95  it-loss: 782.0  sumCorrect: 3835.0
+iter: 96  it-loss: 753.0  sumCorrect: 3864.0
+iter: 97  it-loss: 785.0  sumCorrect: 3832.0
+iter: 98  it-loss: 770.0  sumCorrect: 3847.0
+iter: 99  it-loss: 804.0  sumCorrect: 3813.0
+WARNING: TESTING ON ONLY ONE QUARTER OF THE TEST DATA, FOR FASTER TEST TIMES.
+Testing weights over 1562 examples. This may take a while.
+Sum losses: 4122  totalChars: 11789
+Accuracy: 65.03520230723556%
