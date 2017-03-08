@@ -240,7 +240,34 @@ def _score(x,y,w,phi):
 	"""
 	return w.dot(phi(x,y,w.shape[1]).T)[0,0]
 
-def PlotLosses(losses, datapath, show=True):
+def SaveLosses(losses, accuracy, beamWidth, dataPath, searchMethod, beamUpdateType, titleStr, show, isTraining):
+	#write the losses to file, for repro
+	if isTraining:
+		fnamePrefix = "Results/"+dataPath[0:4]+"Train_b"+str(beamWidth)+"_"+searchMethod+"_"+beamUpdateType
+	else:
+		fnamePrefix = "Results/"+dataPath[0:4]+"Test_b"+str(beamWidth)+"_"+searchMethod+"_"+beamUpdateType
+
+	ofile = open(fnamePrefix+".txt","w+")
+	ofile.write(str(losses)+"\n")
+	ofile.write(str(accuracy)+"\n")
+	ofile.close()
+	
+	if isTraining:
+		#plot the training loss
+		xs = [i for i in range(0,len(losses))]
+		plt.ylim([0,max(losses)])
+		plt.title(titleStr)
+		plt.xlabel("Iteration")
+		plt.ylabel("Sum Hamming Loss")
+		plt.plot(xs, losses)
+		plt.savefig(fnamePrefix+".png")
+		if show:
+			plt.show()
+
+"""
+#Old; this was for InferRGS methods, hw1
+def eSaveLosses(losses, datapath, show=True):
+def SaveLosses(losses, datapath, show=True):
 	#plot the losses
 	xs = [i for i in range(0,len(losses))]
 	plt.ylim([0,max(losses)])
@@ -251,7 +278,8 @@ def PlotLosses(losses, datapath, show=True):
 	plt.savefig(datapath[0:5]+"_HamLoss_Phi"+str(phiNum)+"_R"+str(R)+"_maxIt"+str(maxIt)+".png")
 	if show:
 		plt.show()
-
+"""
+		
 """
 Randomized greedy search inference, as specified in the hw1 spec.
 
@@ -501,18 +529,319 @@ def InferRGS_Inefficient(x, w, phi, R):
 	return y_max, phi(x, y_max, d), maxScore	
 
 """
-Checks whether or not this was a prediction error. In this case, just whether or not y* == y_hat
+Given some x sequence, returns the top scoring b nodes representing the first character
+in a y sequence, where b is the beam width.
+"""
+def _beamSearchInitialization(xseq, w, beamWidth):
+	beam = []
+	for c in LABELS:
+		urange = g_unaryFeatureVectorIndices[c]
+		score = w[0,urange[0]:urange[1]].dot(xseq[0][0,:].T)
+		beam.append(([c],score))
 
-Returns: hamming loss
+	#sort and beamify the beam
+	beam.sort(key = lambda tup: tup[1], reverse=True)
+	if beamWidth > 0:
+		beam = beam[0:beamWidth]
+	#print("BEAM: "+str(beam))
+	return beam
+
+"""
+Performs best-first-search beam update: expand only the highest scoring node on the beam,
+delete that node from beam, and append all of its children. Re-sort the beam, then truncate the beam
+by beamWidth.
+
+@sortedBeam: A sorted beam, with the highest scoring node at the 0th index.
+@beamWidth: The beam width; if <= 0, beam is infinity
+@xseq: The input x-sequence, required here just for scoring the nodes
+@w: The current weight vector, again required just for scoring nodes
+@phi: Feature function, also just for scoring nodes
+
+Returns: new, sorted beam, with max at 0th index
+"""
+def _bestFirstBeamUpdate(sortedBeam,beamWidth,xseq,w,phi):
+	d = w.shape[1]
+	#get the max on the beam
+	y_max = sortedBeam[0][0]
+	cxSeqIndex = len(y_max)
+	baseScore = sortedBeam[0][1]
+	#remove y_max from beam, to prevent cycling
+	sortedBeam = sortedBeam[1:]
+	xvec = xseq[cxSeqIndex][0,:]
+	prevC = y_max[-1]
+	
+	#expand the beam with children (candidate set) of highest scoring node
+	for c in LABELS:
+		candidate = y_max + [c]
+		#adjust unary score component
+		urange = g_unaryFeatureVectorIndices[c]
+		candidateScore = baseScore + w[0,urange[0]:urange[1]].dot(xvec)
+		#pairwise features
+		pairwiseIndex = g_pairwiseFeatureVectorIndices[prevC+c]
+		candidateScore += w[0, pairwiseIndex]
+		#candidateScore = w.dot( phi(xseq,candidate,d).T ) #TODO: if necessary, optimize this score update; full-score computation is repetitive and unnecessary
+		sortedBeam.append( (candidate,candidateScore) )
+
+	#sort beam by node scores
+	sortedBeam.sort(key = lambda tup: tup[1],reverse=True)
+	#prune beam
+	if len(sortedBeam) > beamWidth and beamWidth > 0:
+		sortedBeam = sortedBeam[0:beamWidth]
+
+	#print("BEAM: "+str(sortedBeam))
+		
+	return sortedBeam
+
+"""
+Performs breadth-first-search beam update: replace all nodes on the beam with their children, re-score, sort by score,
+and truncate by @beamWidth.
+
+@beam: The current beam
+@beamWidth: The beam width; if <= 0, beam is infinity
+@xseq: The input x-sequence, required here just for scoring the nodes
+@w: The current weight vector, again required just for scoring nodes
+@phi: Feature function, also just for scoring nodes
+
+Returns: new, sorted beam, with max at 0th index
+
+
+	urange = g_unaryFeatureVectorIndices[yseq[0]]
+	z[0,urange[0]:urange[1]] = xseq[0][0,:]
+
+	#iterate pairwise and other y sequence features
+	for i in range(1,len(yseq)):
+		#unary features
+		urange = g_unaryFeatureVectorIndices[yseq[i]]
+		z[0,urange[0]:urange[1]] += xseq[i][0,:]
+		
+		#pairwise features; z_yi_i == 1 iff y_i == alpha and y_i-1 == alpha
+		pairwiseIndex = g_pairwiseFeatureVectorIndices[yseq[i-1]+yseq[i]]
+		z[0, pairwiseIndex] += 1.0
+
+
+"""
+def _breadthFirstBeamUpdate(beam,beamWidth,xseq,w,phi):
+	d = w.shape[1]
+	newBeam = []
+	
+	#expand all nodes on the beam
+	for node in beam:
+		baseScore = node[1]
+		#if int(baseScore) % 6 == 5: #periodically recalculate full score calculation, to mitigate accumulating error in code optimization
+		#	baseScore = w.dot( phi(xseq, node[0], d).T )[0,0]
+		cxSeqIndex = len(node[0])
+		for c in LABELS:
+			candidate = node[0] + [c]
+			#adjust unary score component
+			urange = g_unaryFeatureVectorIndices[c]
+			candidateScore = baseScore + w[0, urange[0]:urange[1]].dot(xseq[cxSeqIndex][0,:])
+			#pairwise features; z_yi_i == 1 iff y_i == alpha and y_i-1 == alpha
+			pairwiseIndex = g_pairwiseFeatureVectorIndices[candidate[-2]+candidate[-1]]
+			candidateScore += w[0, pairwiseIndex]
+			#candidateScore = w.dot( phi(xseq,candidate,d).T ) #TODO: if necessary, optimize this score update; full-score computation is repetitive and unnecessary
+			newBeam.append( (candidate,candidateScore) )
+
+	#sort beam by node scores
+	newBeam.sort(key = lambda tup: tup[1],reverse=True)
+	
+	#prune beam
+	if len(newBeam) > beamWidth and beamWidth > 0:
+		newBeam = newBeam[0:beamWidth]
+
+	#print("BEAM: "+str(newBeam))
+		
+	return newBeam
+	
+"""
+Verifies whether or not any node in the beam is a prefix of the correct output, @y_star
+"""
+def _beamHasGoodNode(beam,y_star):
+	#early update check: if beam contains no y_good nodes, return highest scoring node to perform update
+	for node in beam:
+		if node[0] == y_star[0:len(node[0])]:
+			return True
+
+	return False
+
+def _getFirstCompleteNode(sortedBeam,yLen):	
+	for node in sortedBeam:
+		if len(node[0]) >= yLen:
+			return node
+	return None
+
+"""
+Just checks if any node on the beam is a complete output
+"""
+def _beamHasCompleteOutput(beam,yLen):
+		return _getFirstCompleteNode(beam,yLen) != None
+"""
+For two lists, check if the members of y_hat are a prefix of y_star.
+This is degenerately true if y_star is a prefix of y_hat, and y_hat is longer.
+"""
+def _isPrefix(y_hat,y_star):
+	for i in range(min(len(y_hat),len(y_star))):
+		if y_hat[i] != y_star[i]:
+			return False
+	return True
+
+"""
+This is a utility of max-violation, which finds the first wrong node in a beam instance,
+where "wrong" means node is not a prefix of y_star. The beam is assumed sorted,
+such that the first non-matching node is the max wrong one.
+
+Returns: first non-matching node, or None if no such node (which should happen only very rarely)
+"""
+def _getFirstWrongNode(sortedBeam,y_star):
+	for node in sortedBeam:
+		if not _isPrefix(node[0],y_star):
+			return node
+	return None
+			
+"""
+
+Returns the top-scoring example of the lowest scoring beam.
+"""
+def _maxViolationUpdate(xseq, y_star, w, phi, beamUpdateMethod, beamWidth):
+	d = w.shape[1]
+	#beam initialization function, I() in the lit. The beam contains (sequence,score) tuples
+	beam = _beamSearchInitialization(xseq, w, beamWidth)
+	
+	#max-score y_hat of the min-scoring beam instance
+	#yMaxViolation = beam[0][0]
+	#maxViolationScore = beam[0][1]
+	yMaxViolation = beam[0][0]
+	maxViolationScore = beam[0][1]
+	maxViolationDelta = -10000000
+	yLen = len(y_star)
+	
+	#until beam highest scoring node in beam is a complete structured output or terminal node
+	t = 1
+	while not _beamHasCompleteOutput(beam, yLen):
+		beam = beamUpdateMethod(beam, beamWidth, xseq, w, phi)
+		#update the max-violation delta param
+		wrongNode = _getFirstWrongNode(beam,y_star)
+		if wrongNode != None:
+			correctPrefixScore = w.dot( phi(xseq, y_star[0:t], d).T )[0,0]
+			delta = abs(wrongNode[1] - correctPrefixScore)
+			if delta > maxViolationDelta:
+				maxViolationDelta = delta
+				yMaxViolation = wrongNode[0]
+				maxViolationScore = wrongNode[1]
+		#else:
+			#in this case all nodes in the beam matched the y_star prefix, which should be extremely unlikely, except for very small beams
+			#print("WARNING wrongNode == None in maxViolationUpdate()")
+		t += 1
+			
+	return yMaxViolation, phi(xseq, yMaxViolation, d), maxViolationScore
+
+def _standardUpdate(xseq, y_star, w, phi, beamUpdateMethod, beamWidth):
+	d = w.shape[1]
+	yLen = len(y_star)
+	#beam initialization function, I() in the lit. The beam contains (sequence,score) tuples
+	beam = _beamSearchInitialization(xseq, w, beamWidth)
+	
+	#until beam contains a complete structured output/terminal node
+	while not _beamHasCompleteOutput(beam, yLen):
+		beam = beamUpdateMethod(beam, beamWidth, xseq, w, phi)
+	
+	#beam is sorted on each iteration, so max is first node
+	return beam[0][0], phi(xseq, beam[0][0], d), beam[0][1]
+
+"""
+def _maxViolationUpdate(xseq, y_star, w, phi, beamUpdateMethod, beamWidth):
+	d = w.shape[1]
+	#beam initialization function, I() in the lit. The beam contains (sequence,score) tuples
+	beam = _beamSearchInitialization(xseq, w, beamWidth)
+	
+	#max-score y_hat of the min-scoring beam instance
+	#yMaxViolation = beam[0][0]
+	#maxViolationScore = beam[0][1]
+	yMaxViolation = ""
+	maxViolationScore = 10000000
+	yLen = len(y_star)
+	
+	#until beam highest scoring node in beam is a complete structured output or terminal node
+	t = 0
+	while not _beamHasCompleteOutput(beam, yLen):
+		beam = beamUpdateMethod(beam, beamWidth, xseq, w, phi)
+		completeMaxNode = _getMaxWrongNodeInBeam(beam, yLen)
+		if completeMaxNode != None and completeMaxNode[1] < maxViolationScore:
+			#print("hit it")
+			maxViolationScore = completeMaxNode[1]
+			yMaxViolation = completeMaxNode[0]
+
+	return yMaxViolation, phi(xseq, yMaxViolation, d), maxViolationScore
+"""
+	
+"""
+Returns the max-scoring complete node in beam; None if there is no complete node.
+
+Returns: max-complete-Node (or None)
+"""
+def _getMaxCompleteNodeInBeam(beam,completeLen):
+	maxCompleteScore = -100000000.0
+	maxCompleteNode = None
+	for node in beam:
+		if len(node[0]) == completeLen and node[1] > maxCompleteScore:
+			maxCompleteScore = node[1]
+			maxCompleteNode = node
+	
+	return maxCompleteNode
+"""
+Runs early update: progress until beam contains no y_good node (no node that could lead to a solution),
+and return the highest-scoring node in the beam at that point as the y_hat by which to make perceptron updates.
+
+@beamUpdateMethod: A function for performing the beam update, in this case either best-first or breadth-first beam update.
+"""	
+def _earlyUpdate(xseq, y_star, w, phi, beamUpdateMethod, beamWidth):
+	d = w.shape[1]
+	#beam initialization function, I() in the lit. The beam contains (sequence,score) tuples
+	beam = _beamSearchInitialization(xseq,w,beamWidth)
+
+	#i = 0
+	yMax = beam[0][0]
+	yLen = len(y_star)
+	
+	#until beam highest scoring node in beam is a complete structured output or terminal node
+	searchError = False #the condition by which we exit search and return the current highest scoring node in the beam when beam contains no good nodes
+	while not _beamHasCompleteOutput(beam, yLen) and not searchError:
+		beam = beamUpdateMethod(beam,beamWidth,xseq,w,phi)
+		if not _beamHasGoodNode(beam,y_star):
+			searchError = True
+			#other potential work, as in the case of max-violation
+			
+	return beam[0][0], phi(xseq, beam[0][0], d), beam[0][1]
+	
+"""
+The test version of beam-inference. Currently this implements best-first search, but can be easily modified to do BFS instead.
+"""
+def _beamSearchInference(xseq, w, phi, outputLen, beamUpdateMethod, beamWidth):
+	d = w.shape[1]
+	#beam initialization function, I() in the lit. The beam contains (sequence,score) tuples
+	beam = _beamSearchInitialization(xseq,w,beamWidth)
+	
+	#until beam highest scoring node in beam is a complete structured output or terminal node
+	while not _beamHasCompleteOutput(beam, outputLen):
+		beam = beamUpdateMethod(beam,beamWidth,xseq,w,phi)
+
+	return beam[0][0], phi(xseq, beam[0][0], d), beam[0][1]
+
+"""
+Returns hamming loss for two strings. See wiki.
+
+Returns: hamming loss, which is not the total number of incorrect characters, but rather the number
+of incorrect characters weighed by length.
 """
 def _getHammingError(y_star, y_hat):
-	loss = 0
-	length = len(y_star)
-	for i in range(0,length):
+	loss = 0.0
+	#count character by character losses
+	for i in range(min(len(y_star), len(y_hat))):
 		if y_star[i] != y_hat[i]:
-			loss += 1
+			loss += 1.0
+	#loss, accounting for differences in length
+	loss += abs(len(y_star) - len(y_hat))
 	
-	return loss, length
+	return loss / float(max(len(y_star), len(y_hat)))  #TODO: Div zero
 	
 """
 Util for getting the correct phi function to pass around
@@ -665,37 +994,35 @@ def _preformatData(D,phi,d):
 """
 Given some test data, get a prediction from InferRGS()
 """
-def TestPerceptron(w, phiNum, R, testData):
+def TestPerceptron(w, phiNum, R, beamUpdateMethod, beamWidth, testData):
 	losses = []
-	totalChars = 0
 	phi = _getPhi(phiNum)
 	
 	#filter the data of too-short examples
 	testData = _filterShortData(testData, phiNum)
-	
-	#chop test data, only test on one quarter of it
-	if len(testData) > 8:
-		testData = testData[0:int(len(testData)/4)]
-		print("WARNING: Testing on only one quarter of the test data, for faster test times.".upper())
 		
 	print("Testing weights over "+str(len(testData))+" examples. This may take a while.")
 
+	i = 0
 	for example in testData:
 		xseq = example[0]
 		y_star = example[1]
-		y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+		#y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+		y_hat, phi_y_hat, score = _beamSearchInference(xseq, w, phi, len(y_star), beamUpdateMethod, beamWidth)
 		#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
 		#print("hat: "+str(y_hat))
 		#print("star: "+str(y_star))
-		loss, length = _getHammingError(y_star, y_hat)
+		loss = _getHammingError(y_star, y_hat)
 		losses.append(loss)
-		totalChars += length
+		i += 1
+		if i % 50 == 49:
+			print("\rTest datum "+str(i)+" of "+str(len(testData))+"            ",end="")
 	
-	#get flat accuracy
-	#print("totalChars="+str(totalChars)+"    sum(losses)="+str(sum(losses)))
-	accuracy = 100.0 * (1.0 - (float(sum(losses)) / float(totalChars)))
-	print("Sum losses: "+str(sum(losses))+"  totalChars: "+str(totalChars))
+	#get Hamming accuracy
+	accuracy = 100.0 * (1.0 - sum(losses) / float(len(testData)))
 	print("Accuracy: "+str(accuracy)+"%")
+	
+	return losses, accuracy
 	
 def _filterShortData(D, phiNum):
 	requiredLength = 2
@@ -711,8 +1038,10 @@ def _filterShortData(D, phiNum):
 @phiNum: The structured feature function phi(x,y)
 @maxIt: max iterations
 @eta: learning rate
+@errorUpdateMethod: A function performing either bfs or early update
+@beamUpdateMethod: A functionf ro performing beam updates, either best-first or breadth-first beam update
 """
-def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
+def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta, errorUpdateMethod, beamUpdateMethod, beamWidth):
 	phi = _getPhi(phiNum)
 	xdim = XDIM
 	print("xdim: "+str(xdim))
@@ -720,6 +1049,8 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 	print("wdim: "+str(dim))
 	#intialize weights of scoring function to 0
 	w = np.zeros((1,dim), dtype=np.float32)
+	w[0,:] = 1.0
+	
 	d = w.shape[1]
 	
 	#filter out the training examples of length less than the n-gram features
@@ -730,11 +1061,9 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 
 	#a list of sum losses over an entire iteration
 	losses = []
-	correct = []
 	print("num training examples: "+str(len(D)))
 	for i in range(maxIt):
 		sumItLoss = 0.0
-		sumItCorrect = 0.0
 		for j in range(len(D)):
 			#sequential training
 			xseq, y_star = D[j]
@@ -744,36 +1073,43 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta):
 			#get predicted structured output
 			#print("j="+str(j)+" of "+str(len(D)))
 			#y_hat = _getRandomY(labels, len(y_star))
-			y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
+			#y_hat, phi_y_hat, score = InferBestFirstBeamSearch(xseq, w, phi, beamWidth)
+			y_hat, phi_y_hat, score = errorUpdateMethod(xseq, y_star, w, phi, beamUpdateMethod, beamWidth)
+			#y_hat, phi_y_hat, score = InferRGS(xseq, w, phi, R)
 			#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
 			#print("y_hat: "+str(y_hat)+"   score: "+str(score))
 			#get the hamming loss
 			#print("ystar: "+str(y_star))
 			#print("yhat:  "+str(y_hat))
-			loss, length = _getHammingError(y_star, y_hat)
-			ncorrect = length - loss
+			loss = _getHammingError(y_star, y_hat)
 			if loss > 0:
 				#zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
 				#w = w + eta * (phi(xseq, y_star, d) - phi_y_hat)
-				w = w + eta * (phi(xseq, y_star, d) - phi(xseq, y_hat, d))
-				#w = w + eta * (preprocessedData[j] - phi_y_hat)
+				#w = w + eta * (phi(xseq, y_star, d) - phi(xseq, y_hat, d))
+				w = w + eta * (preprocessedData[j] - phi_y_hat)
 			sumItLoss += loss
-			sumItCorrect += ncorrect
 		#append the total loss for this iteration, for plotting
 		losses.append(sumItLoss)
-		correct.append(sumItCorrect)
-		print("iter: "+str(i)+"  it-loss: "+str(losses[-1])+"  sumCorrect: "+str(correct[-1]))
+		print("iter: "+str(i)+"  it-loss: "+str(losses[-1])+"  it-accuracy: "+str(1.0 - losses[-1]/float(len(D))))
 	
-	return w, losses
+	return w, losses, 1.0 - losses[-1]/float(len(D))
 
-	
+def usage():
+	print("python StructuredPerceptron --trainPath=[] --testPath=[]")
+	print("Optional (prefixed '--'): eta, maxIt, R, beamWidth, showPlot, phi, searchError (mv, early, std), beamUpdate (bfs, best) ")
+
 trainPath = None
 testPath = None
 showPlot = False
+searchMethod = "std"
+beamUpdateType = "best"
+beamUpdateMethod = _bestFirstBeamUpdate
+searchErrorUpdateMethod = _standardUpdate
 R = 10
 phiNum = 1
 maxIt = 100
 eta = 0.01
+beamWidth = 10
 for arg in sys.argv:
 	if "--trainPath=" in arg:
 		trainPath = arg.split("=")[1]
@@ -789,6 +1125,33 @@ for arg in sys.argv:
 		R = int(arg.split("=")[1])
 	if "--showPlot" in arg:
 		showPlot = True
+	if "--beamWidth=" in arg:
+		beamWidth = int(arg.split("=")[1])
+	if "--beamUpdate=" in arg:
+		if arg.split("=")[1].lower() == "bfs":
+			beamUpdateType = "bfs"
+			beamUpdateMethod = _breadthFirstBeamUpdate
+		elif arg.split("=")[1].lower() == "best":
+			beamUpdateType = "best"
+			beamUpdateMethod = _bestFirstBeamUpdate
+		else:
+			print("ERROR beam update option not found: "+arg.split("=")[1])
+			usage()
+			exit()
+	if "--searchError=" in arg:
+		if arg.split("=")[1].lower() == "mv":
+			searchMethod = "mv"
+			searchErrorUpdateMethod = _maxViolationUpdate
+		elif arg.split("=")[1].lower() == "early":
+			searchMethod = "early"
+			searchErrorUpdateMethod = _earlyUpdate
+		elif arg.split("=")[1].lower() == "std" or arg.split("=")[1].lower() == "standard":
+			searchMethod = "std"
+			searchErrorUpdateMethod = _standardUpdate
+		else:
+			print("ERROR search update option not found: "+arg.split("=")[1])
+			usage()
+			exit()
 
 if phiNum == 2:
 	USE_TRIPLES = True
@@ -797,21 +1160,29 @@ elif phiNum == 3:
 
 if trainPath == None:
 	print("ERROR no trainPath passed")
+	usage()
 	exit()
 if testPath == None:
 	print("ERROR no testPath passed")
+	usage()
 	exit()
 
 trainData, xdim = _getData(trainPath)
 testData, _ = _getData(testPath)
 _configureGlobalParameters(xdim, phiNum, trainPath)
 
-print("Executing with  maxIt="+str(maxIt)+"    R="+str(R)+"    eta="+str(eta)+"    phiNum="+str(phiNum)+"    trainPath="+trainPath+"    testPath="+testPath)
-
+print("Executing with maxIt="+str(maxIt)+"  R="+str(R)+"  eta="+str(eta)+"  phiNum="+str(phiNum)+"  beam="+str(beamWidth)+"  trainPath="+trainPath+"  testPath="+testPath)
+print("searchUpdate="+searchMethod+"    beamUpdate="+beamUpdateType+"    maxIt="+str(maxIt))
 #print(str(trainData[0]))
 #print("lenx: "+str(len(trainData[0][0]))+"  leny: "+str(len(trainData[0][1])))
-w, trainingLosses = OnlinePerceptronTraining(trainData, R, phiNum, maxIt, eta)
-PlotLosses(trainingLosses, trainPath, showPlot)
+w, trainingLosses, trainAccuracy = OnlinePerceptronTraining(trainData, R, phiNum, maxIt, eta, searchErrorUpdateMethod, beamUpdateMethod, beamWidth)
+SaveLosses(trainingLosses, trainAccuracy, beamWidth, trainPath, searchMethod, beamUpdateType, "Sum Hamming Loss per Training Iteration",False,True)
 
-TestPerceptron(w, phiNum, R, testData)
+#run testing on only 1/4th of test data, since for this assignment we have way more test data than training data
+print("WARNING: Truncating test data from "+str(len(testData))+" data points to "+str(len(testData)/4))
+testData = testData[0:int(len(testData)/4)]
+
+testLosses, testAccuracy = TestPerceptron(w, phiNum, R, beamUpdateMethod, beamWidth, testData)
+SaveLosses(testLosses, testAccuracy, beamWidth, trainPath, searchMethod, beamUpdateType, "Sum Hamming Loss per Test Iteration",False,False)
+
 
