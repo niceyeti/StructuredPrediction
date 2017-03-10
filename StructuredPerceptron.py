@@ -135,7 +135,7 @@ This is phi_1 since it uses only up to pairwise features: phi(x,y) + phi(y_k,y_k
 
 returns: an R^d numpy vector representing the sum over all little phi features for the entire sequence
 """
-def _Phi1(xseq,yseq,d):
+def _Phi1(xseq, yseq, d):
 	z = np.zeros((1,d), dtype=np.float32)
 	#print("z shape: "+str(z.shape[1]))
 	#0th unary features are done first to avert if-checking index-bounds for pairwise features inside this high-frequency loop
@@ -240,7 +240,11 @@ def _score(x,y,w,phi):
 	"""
 	return w.dot(phi(x,y,w.shape[1]).T)[0,0]
 
-def SaveLosses(losses, accuracy, beamWidth, dataPath, searchMethod, beamUpdateType, titleStr, show, isTraining):
+"""
+
+
+"""
+def SaveLosses(accuracies, finalAccuracy, beamWidth, dataPath, searchMethod, beamUpdateType, titleStr, show, isTraining):
 	#write the losses to file, for repro
 	if isTraining:
 		fnamePrefix = "Results/"+dataPath[0:4]+"Train_b"+str(beamWidth)+"_"+searchMethod+"_"+beamUpdateType
@@ -248,18 +252,20 @@ def SaveLosses(losses, accuracy, beamWidth, dataPath, searchMethod, beamUpdateTy
 		fnamePrefix = "Results/"+dataPath[0:4]+"Test_b"+str(beamWidth)+"_"+searchMethod+"_"+beamUpdateType
 
 	ofile = open(fnamePrefix+".txt","w+")
-	ofile.write(str(losses)+"\n")
-	ofile.write(str(accuracy)+"\n")
+	ofile.write(str(accuracies)+"\n")
+	ofile.write(str(finalAccuracy)+"\n")
 	ofile.close()
-	
+
 	if isTraining:
 		#plot the training loss
-		xs = [i for i in range(0,len(losses))]
-		plt.ylim([0,max(losses)])
+		xs = [i for i in range(0,len(accuracies))]
+		plt.ylim([0,max(accuracies)])
 		plt.title(titleStr)
 		plt.xlabel("Iteration")
-		plt.ylabel("Sum Hamming Loss")
-		plt.plot(xs, losses)
+		plt.ylabel("Hamming Accuracy")
+		plt.plot(xs, accuracies)
+		x1,x2,y1,y2 = plt.axis()
+		plt.axis((x1,x2,0.0,1.0))
 		plt.savefig(fnamePrefix+".png")
 		if show:
 			plt.show()
@@ -660,7 +666,6 @@ def _beamHasGoodNode(beam,y_star):
 	for node in beam:
 		if node[0] == y_star[0:len(node[0])]:
 			return True
-
 	return False
 
 def _getFirstCompleteNode(sortedBeam,yLen):	
@@ -797,21 +802,15 @@ def _earlyUpdate(xseq, y_star, w, phi, beamUpdateMethod, beamWidth):
 	d = w.shape[1]
 	#beam initialization function, I() in the lit. The beam contains (sequence,score) tuples
 	beam = _beamSearchInitialization(xseq,w,beamWidth)
-
-	#i = 0
-	yMax = beam[0][0]
 	yLen = len(y_star)
 	
 	#until beam highest scoring node in beam is a complete structured output or terminal node
 	searchError = False #the condition by which we exit search and return the current highest scoring node in the beam when beam contains no good nodes
-	while not _beamHasCompleteOutput(beam, yLen) and not searchError:
+	while not _beamHasCompleteOutput(beam, yLen) and _beamHasGoodNode(beam,y_star):
 		beam = beamUpdateMethod(beam,beamWidth,xseq,w,phi)
-		if not _beamHasGoodNode(beam,y_star):
-			searchError = True
-			#other potential work, as in the case of max-violation
-			
+
 	return beam[0][0], phi(xseq, beam[0][0], d), beam[0][1]
-	
+
 """
 The test version of beam-inference. Currently this implements best-first search, but can be easily modified to do BFS instead.
 """
@@ -832,16 +831,17 @@ Returns hamming loss for two strings. See wiki.
 Returns: hamming loss, which is not the total number of incorrect characters, but rather the number
 of incorrect characters weighed by length.
 """
-def _getHammingError(y_star, y_hat):
+def _getHammingDist(y_star, y_hat):
 	loss = 0.0
 	#count character by character losses
 	for i in range(min(len(y_star), len(y_hat))):
 		if y_star[i] != y_hat[i]:
 			loss += 1.0
 	#loss, accounting for differences in length
-	loss += abs(len(y_star) - len(y_hat))
+	loss += float(abs(len(y_star) - len(y_hat)))
 	
-	return loss / float(max(len(y_star), len(y_hat)))  #TODO: Div zero
+	return loss
+	#return loss / float(max(len(y_star), len(y_hat)))  #TODO: Div zero
 	
 """
 Util for getting the correct phi function to pass around
@@ -917,13 +917,6 @@ def _configureGlobalParameters(xdim, phiNum, dataPath):
 		USE_TRIPLES = True
 	if phiNum >= 3:
 		USE_QUADS = True
-		
-	print("Global params configured")
-	print("\tLABELS: "+LABELS)
-	print("\tK: "+str(K))
-	print("\tXDIM: "+str(XDIM))
-	print("\tUSE_TRIPLES: "+str(USE_TRIPLES))
-	print("\tUSE_QUADS: "+str(USE_QUADS))
 	
 	
 	
@@ -952,7 +945,7 @@ def _getData(dataPath):
 	yseq = []
 	
 	#get dimension from the first x example
-	xdim = len(records[0].split(" ")[1].replace("im",""))
+	xdim = len(records[0].split(" ")[1].replace("im","").strip())
 	
 	#exit()
 	for line in records:
@@ -965,7 +958,7 @@ def _getData(dataPath):
 				if binaryString[i] == "1":
 					x[0,i] = 1
 			xseq.append(x)
-			yseq.append(line.split(" ")[2][0].upper())
+			yseq.append(line.split(" ")[2][0].strip().upper())
 		if len(line.strip()) < 10 and not high:
 			D.append((xseq,yseq))
 			high = True
@@ -1012,14 +1005,14 @@ def TestPerceptron(w, phiNum, R, beamUpdateMethod, beamWidth, testData):
 		#y_hat, phi_y_hat, score = InferRGS_Inefficient(xseq, w, phi, R)
 		#print("hat: "+str(y_hat))
 		#print("star: "+str(y_star))
-		loss = _getHammingError(y_star, y_hat)
+		loss = _getHammingDist(y_star, y_hat)
 		losses.append(loss)
 		i += 1
 		if i % 50 == 49:
 			print("\rTest datum "+str(i)+" of "+str(len(testData))+"            ",end="")
 	
 	#get Hamming accuracy
-	accuracy = 100.0 * (1.0 - sum(losses) / float(len(testData)))
+	accuracy = 100.0 * (1.0 - sum(losses) / (float(K) * float(len(testData))))
 	print("Accuracy: "+str(accuracy)+"%")
 	
 	return losses, accuracy
@@ -1039,7 +1032,9 @@ def _filterShortData(D, phiNum):
 @maxIt: max iterations
 @eta: learning rate
 @errorUpdateMethod: A function performing either bfs or early update
-@beamUpdateMethod: A functionf ro performing beam updates, either best-first or breadth-first beam update
+@beamUpdateMethod: A function for performing beam updates, either best-first or breadth-first beam update
+
+Returns: trained weight vector @w, the losses, and the accuracy of the final iteration
 """
 def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta, errorUpdateMethod, beamUpdateMethod, beamWidth):
 	phi = _getPhi(phiNum)
@@ -1049,7 +1044,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta, errorUpdateMethod, beamUp
 	print("wdim: "+str(dim))
 	#intialize weights of scoring function to 0
 	w = np.zeros((1,dim), dtype=np.float32)
-	w[0,:] = 1.0
+	#w[0,:] = 1.0
 	
 	d = w.shape[1]
 	
@@ -1081,7 +1076,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta, errorUpdateMethod, beamUp
 			#get the hamming loss
 			#print("ystar: "+str(y_star))
 			#print("yhat:  "+str(y_hat))
-			loss = _getHammingError(y_star, y_hat)
+			loss = _getHammingDist(y_star, y_hat)
 			if loss > 0:
 				#zStar = preprocessedData[j]  #effectively this is phi(x, y_star, d), but preprocessed beforehand to cut down on computations
 				#w = w + eta * (phi(xseq, y_star, d) - phi_y_hat)
@@ -1089,7 +1084,7 @@ def OnlinePerceptronTraining(D, R, phiNum, maxIt, eta, errorUpdateMethod, beamUp
 				w = w + eta * (preprocessedData[j] - phi_y_hat)
 			sumItLoss += loss
 		#append the total loss for this iteration, for plotting
-		losses.append(sumItLoss)
+		losses.append(sumItLoss/float(K))
 		print("iter: "+str(i)+"  it-loss: "+str(losses[-1])+"  it-accuracy: "+str(1.0 - losses[-1]/float(len(D))))
 	
 	return w, losses, 1.0 - losses[-1]/float(len(D))
@@ -1107,7 +1102,7 @@ beamUpdateMethod = _bestFirstBeamUpdate
 searchErrorUpdateMethod = _standardUpdate
 R = 10
 phiNum = 1
-maxIt = 100
+maxIt = 50
 eta = 0.01
 beamWidth = 10
 for arg in sys.argv:
@@ -1171,18 +1166,25 @@ trainData, xdim = _getData(trainPath)
 testData, _ = _getData(testPath)
 _configureGlobalParameters(xdim, phiNum, trainPath)
 
+print("Global params configured")
+print("\tLABELS: "+LABELS)
+print("\tK: "+str(K))
+print("\tXDIM: "+str(XDIM))
+print("\tUSE_TRIPLES: "+str(USE_TRIPLES))
+print("\tUSE_QUADS: "+str(USE_QUADS))
 print("Executing with maxIt="+str(maxIt)+"  R="+str(R)+"  eta="+str(eta)+"  phiNum="+str(phiNum)+"  beam="+str(beamWidth)+"  trainPath="+trainPath+"  testPath="+testPath)
 print("searchUpdate="+searchMethod+"    beamUpdate="+beamUpdateType+"    maxIt="+str(maxIt))
+print("xdim="+str(xdim))
 #print(str(trainData[0]))
 #print("lenx: "+str(len(trainData[0][0]))+"  leny: "+str(len(trainData[0][1])))
 w, trainingLosses, trainAccuracy = OnlinePerceptronTraining(trainData, R, phiNum, maxIt, eta, searchErrorUpdateMethod, beamUpdateMethod, beamWidth)
-SaveLosses(trainingLosses, trainAccuracy, beamWidth, trainPath, searchMethod, beamUpdateType, "Sum Hamming Loss per Training Iteration",False,True)
+#normalize the summed-losses to make them accuracy measures
+trainingLosses = [1.0 - loss / float(len(trainData)) for loss in trainingLosses]
+SaveLosses(trainingLosses, trainAccuracy, beamWidth, trainPath, searchMethod, beamUpdateType, "Hamming Accuracy per Training Iteration",False,True)
 
 #run testing on only 1/4th of test data, since for this assignment we have way more test data than training data
 print("WARNING: Truncating test data from "+str(len(testData))+" data points to "+str(len(testData)/4))
 testData = testData[0:int(len(testData)/4)]
 
 testLosses, testAccuracy = TestPerceptron(w, phiNum, R, beamUpdateMethod, beamWidth, testData)
-SaveLosses(testLosses, testAccuracy, beamWidth, trainPath, searchMethod, beamUpdateType, "Sum Hamming Loss per Test Iteration",False,False)
-
-
+SaveLosses(testLosses, testAccuracy, beamWidth, trainPath, searchMethod, beamUpdateType, "Hamming Accuracy per Test Iteration",False,False)
